@@ -1,0 +1,19 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# OS/Editor
+.DS_Store
+
+# Environment
+.env
+
+# Project Data
+data/
+results/
+logs/
+
+# Docker Compose override
+docker-compose.override.yml
