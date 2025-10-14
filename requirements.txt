@@ -4,8 +4,8 @@
 # Core Celery
 celery[redis]==5.3.4
 
-# Redis client
-redis==5.0.1
+# Redis client (compatible with Celery 5.3.4)
+redis==4.6.0
 
 # Additional dependencies for existing agent code
 langchain-core==0.3.29
