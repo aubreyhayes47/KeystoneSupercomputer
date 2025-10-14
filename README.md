@@ -36,6 +36,7 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 - **Containerized Tools:** Scaffolded `sim-toolbox` directory; Dockerfile and demo for FEniCSx in progress.
 - **Standardized Entrypoints:** Planning `/data` volume mounts and uniform container interfaces.
 - **Tool Adapter Pattern:** Writing Python adapters for simulation tools.
+- **Integration Testing:** Created comprehensive integration test validating end-to-end workflow automation across FEniCSx, LAMMPS, and OpenFOAM.
 
 ---
 
