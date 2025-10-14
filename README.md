@@ -133,21 +133,26 @@ docker compose down
 
 ### Job Queue Management
 
-The Celery worker provides asynchronous job execution:
+The Celery worker provides asynchronous job execution. Use the Task Pipeline module for a high-level, agent-friendly interface:
 
 ```python
-from celery_app import run_simulation_task
+from task_pipeline import TaskPipeline
 
-# Submit a simulation job
-task = run_simulation_task.delay(
+# Initialize pipeline
+pipeline = TaskPipeline()
+
+# Submit and monitor a simulation task
+task_id = pipeline.submit_task(
     tool="fenicsx",
     script="poisson.py",
     params={"mesh_size": 64}
 )
 
-# Get results
-result = task.get(timeout=300)
+# Wait for completion
+result = pipeline.wait_for_task(task_id, timeout=300)
 ```
 
-See [CELERY_QUICK_REFERENCE.md](CELERY_QUICK_REFERENCE.md) for more examples.
+See [TASK_PIPELINE.md](TASK_PIPELINE.md) for comprehensive documentation and examples.
+
+For direct Celery usage, see [CELERY_QUICK_REFERENCE.md](CELERY_QUICK_REFERENCE.md).
 
