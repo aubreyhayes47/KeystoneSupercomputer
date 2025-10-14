@@ -106,10 +106,61 @@ This toolbox follows the Keystone Supercomputer standardized container pattern:
 3. **Reproducibility**: Containerized environment ensures consistent results
 4. **Scalability**: Ready for orchestration with Docker Compose or Kubernetes
 
+## Python Adapter
+
+The FEniCSx toolbox includes a Python adapter (`fenicsx_adapter.py`) that provides a standardized interface for programmatic simulation execution. This enables:
+
+- Automated container orchestration
+- Result parsing and metadata extraction
+- Integration with agentic workflows
+- LLM-based tool calling via MCP
+
+### Using the Adapter
+
+```python
+from fenicsx_adapter import FEniCSxAdapter
+
+# Create adapter instance
+adapter = FEniCSxAdapter(
+    image_name="fenicsx-toolbox",
+    output_dir="./output"
+)
+
+# Run simulation
+result = adapter.run_simulation()
+
+# Access results
+print(f"Success: {result['success']}")
+print(f"Solution range: [{result['metadata']['min_value']}, {result['metadata']['max_value']}]")
+
+# Save metadata
+adapter.save_result_json()
+```
+
+### CLI Usage
+
+```bash
+# Check if Docker image is available
+python3 fenicsx_adapter.py --check
+
+# Build Docker image
+python3 fenicsx_adapter.py --build
+
+# Run simulation
+python3 fenicsx_adapter.py --output-dir ./my_output
+
+# Run with custom script
+python3 fenicsx_adapter.py --output-dir ./my_output --script my_simulation.py
+```
+
+See [`fenicsx_adapter.py`](./fenicsx_adapter.py) and [`example_adapter_usage.py`](./example_adapter_usage.py) for more details.
+
+For comprehensive adapter documentation, see [ADAPTERS.md](../ADAPTERS.md).
+
 ## Next Steps
 
 - Add more example problems (elasticity, fluid dynamics, heat transfer)
-- Implement Python adapter for agent integration
+- ~~Implement Python adapter for agent integration~~ ✓ Completed
 - Configure MPI for parallel simulations
 - Add provenance logging for reproducibility tracking
 

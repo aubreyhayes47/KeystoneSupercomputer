@@ -88,14 +88,66 @@ To run your own LAMMPS input script:
 - [LAMMPS Tutorials](https://lammpstutorials.github.io/)
 - [LAMMPS GitHub Repository](https://github.com/lammps/lammps)
 
+## Python Adapter
+
+The LAMMPS toolbox includes a Python adapter (`lammps_adapter.py`) that provides a standardized interface for programmatic simulation execution. This enables:
+
+- Automated container orchestration
+- Thermodynamic data parsing
+- Result metadata extraction
+- Integration with agentic workflows
+
+### Using the Adapter
+
+```python
+from lammps_adapter import LAMMPSAdapter
+
+# Create adapter instance
+adapter = LAMMPSAdapter(
+    image_name="keystone/lammps:latest",
+    output_dir="./output"
+)
+
+# Run simulation
+result = adapter.run_simulation(
+    input_script="example.lammps",
+    log_file="lammps.log"
+)
+
+# Access thermodynamic data
+if result['thermo_data']:
+    print(f"Timesteps: {result['thermo_data']['summary']['total_steps']}")
+    print(f"Final state: {result['thermo_data']['summary']['final']}")
+
+# Save metadata
+adapter.save_result_json()
+```
+
+### CLI Usage
+
+```bash
+# Check if Docker image is available
+python3 lammps_adapter.py --check
+
+# Build Docker image
+python3 lammps_adapter.py --build
+
+# Run simulation
+python3 lammps_adapter.py --output-dir ./my_output --input-script example.lammps
+```
+
+See [`lammps_adapter.py`](./lammps_adapter.py) and [`example_adapter_usage.py`](./example_adapter_usage.py) for more details.
+
+For comprehensive adapter documentation, see [ADAPTERS.md](../ADAPTERS.md).
+
 ## Integration with Keystone Supercomputer
 
 This toolbox is part of the Keystone Supercomputer project's Phase 3: Simulation Toolbox. It provides:
 
 - **Containerized execution**: Reproducible LAMMPS environment
 - **Standardized interfaces**: Common `/data` mount points across all simulation tools
-- **Agent integration**: Ready for orchestration via the agentic core
+- **Agent integration**: ~~Ready for orchestration via the agentic core~~ ✓ Python adapter implemented
 
 ---
 
-**Next Steps**: This toolbox will be integrated with Python adapters for automated workflow orchestration.
+~~**Next Steps**: This toolbox will be integrated with Python adapters for automated workflow orchestration.~~ ✓ Completed

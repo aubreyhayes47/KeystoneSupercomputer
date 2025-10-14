@@ -192,12 +192,70 @@ OpenFOAM simulations can be memory-intensive. Increase Docker memory limits if n
 docker run --rm -m 4g keystone-openfoam:latest ...
 ```
 
+## Python Adapter
+
+The OpenFOAM toolbox includes a Python adapter (`openfoam_adapter.py`) that provides a standardized interface for programmatic simulation execution. This enables:
+
+- Automated container orchestration
+- Solver log and residual parsing
+- Result metadata extraction
+- Integration with agentic workflows
+
+### Using the Adapter
+
+```python
+from openfoam_adapter import OpenFOAMAdapter
+
+# Create adapter instance
+adapter = OpenFOAMAdapter(
+    image_name="openfoam-toolbox",
+    output_dir="./output"
+)
+
+# Run simulation using case script
+result = adapter.run_simulation(case_name="cavity")
+
+# Or run existing OpenFOAM case
+result = adapter.run_case_direct(
+    case_dir="/path/to/case",
+    solver="icoFoam"
+)
+
+# Access results
+if result['success']:
+    print(f"Timesteps completed: {result['solver_data']['timesteps_completed']}")
+    print(f"Output files: {len(result['output_files'])}")
+
+# Save metadata
+adapter.save_result_json()
+```
+
+### CLI Usage
+
+```bash
+# Check if Docker image is available
+python3 openfoam_adapter.py --check
+
+# Build Docker image
+python3 openfoam_adapter.py --build
+
+# Run simulation with case script
+python3 openfoam_adapter.py --output-dir ./my_output --case-name cavity
+
+# Run existing OpenFOAM case
+python3 openfoam_adapter.py --output-dir ./my_output --case-dir /path/to/case --solver icoFoam
+```
+
+See [`openfoam_adapter.py`](./openfoam_adapter.py) and [`example_adapter_usage.py`](./example_adapter_usage.py) for more details.
+
+For comprehensive adapter documentation, see [ADAPTERS.md](../ADAPTERS.md).
+
 ## Next Steps
 
 - Explore more OpenFOAM tutorials in `/opt/openfoam11/tutorials/`
 - Create custom case files for your specific CFD problems
-- Integrate with Python automation scripts
-- Connect to Keystone Supercomputer agent workflows
+- ~~Integrate with Python automation scripts~~ ✓ Python adapter implemented
+- ~~Connect to Keystone Supercomputer agent workflows~~ ✓ Adapter ready for agent integration
 - Set up ParaView for visualization of results
 
 ---
