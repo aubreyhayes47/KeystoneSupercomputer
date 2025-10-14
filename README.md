@@ -116,8 +116,8 @@ docker compose build
 # Run a test simulation
 docker compose run --rm fenicsx poisson.py
 
-# Start Redis service
-docker compose up -d redis
+# Start Redis and Celery worker
+docker compose up -d redis celery-worker
 
 # Stop all services
 docker compose down
@@ -130,4 +130,24 @@ docker compose down
 - **FEniCSx** - Finite Element Method simulations
 - **LAMMPS** - Molecular Dynamics simulations
 - **OpenFOAM** - Computational Fluid Dynamics simulations
+
+### Job Queue Management
+
+The Celery worker provides asynchronous job execution:
+
+```python
+from celery_app import run_simulation_task
+
+# Submit a simulation job
+task = run_simulation_task.delay(
+    tool="fenicsx",
+    script="poisson.py",
+    params={"mesh_size": 64}
+)
+
+# Get results
+result = task.get(timeout=300)
+```
+
+See [CELERY_QUICK_REFERENCE.md](CELERY_QUICK_REFERENCE.md) for more examples.
 
