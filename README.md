@@ -40,10 +40,10 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 
 ---
 
-### **Phase 4: Orchestration & Workflows** ⏳ **(In Progress)**
+### **Phase 4: Orchestration & Workflows** ✔️ **(Completed)**
 - **Docker Compose:** ✔️ Multi-service orchestration with `docker-compose.yml` - see [DOCKER_COMPOSE.md](DOCKER_COMPOSE.md).
-- **Job Queue:** Celery + Redis integration for background tasks (Redis configured, Celery integration pending).
-- **Local Kubernetes:** Setup with `k3d`, `kubectl`, and `helm`.
+- **Job Queue:** ✔️ Celery + Redis integration for background task processing with worker service.
+- **Local Kubernetes:** Setup with `k3d`, `kubectl`, and `helm` (pending).
 
 ---
 
@@ -116,8 +116,8 @@ docker compose build
 # Run a test simulation
 docker compose run --rm fenicsx poisson.py
 
-# Start Redis service
-docker compose up -d redis
+# Start Redis and Celery worker
+docker compose up -d redis celery-worker
 
 # Stop all services
 docker compose down
@@ -126,7 +126,28 @@ docker compose down
 ### Available Services
 
 - **Redis** - Message broker for job queuing
+- **Celery Worker** - Background job processing
 - **FEniCSx** - Finite Element Method simulations
 - **LAMMPS** - Molecular Dynamics simulations
 - **OpenFOAM** - Computational Fluid Dynamics simulations
+
+### Job Queue Management
+
+The Celery worker provides asynchronous job execution:
+
+```python
+from celery_app import run_simulation_task
+
+# Submit a simulation job
+task = run_simulation_task.delay(
+    tool="fenicsx",
+    script="poisson.py",
+    params={"mesh_size": 64}
+)
+
+# Get results
+result = task.get(timeout=300)
+```
+
+See [CELERY_QUICK_REFERENCE.md](CELERY_QUICK_REFERENCE.md) for more examples.
 

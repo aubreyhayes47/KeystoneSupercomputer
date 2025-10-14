@@ -73,6 +73,29 @@ services:
     profiles:
       - simulation
 
+  # Celery Worker - Background job processing
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    image: keystone-celery-worker:latest
+    container_name: keystone-celery-worker
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./src/celery_app.py:/app/celery_app.py
+      - ./data:/data
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow worker to execute docker commands
+      - ./docker-compose.yml:/app/docker-compose.yml:ro
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONUNBUFFERED=1
+    networks:
+      - keystone-network
+    restart: unless-stopped
+
   # Agent Service - CLI and orchestration (future enhancement)
   # Uncomment when ready to integrate with the agentic core
   # agent:
