@@ -222,19 +222,25 @@ helm install keystone-sim ./keystone-simulation \
 ## Directory Structure
 
 ```
-keystone-simulation/
-├── Chart.yaml              # Chart metadata
-├── values.yaml             # Default configuration values
-├── templates/
-│   ├── _helpers.tpl        # Template helpers
-│   ├── NOTES.txt           # Post-install notes
-│   ├── namespace.yaml      # Namespace definition
-│   ├── redis.yaml          # Redis deployment
-│   ├── celery-worker.yaml  # Celery worker deployment
-│   ├── fenicsx.yaml        # FEniCSx job template
-│   ├── lammps.yaml         # LAMMPS job template
-│   └── openfoam.yaml       # OpenFOAM job template
-└── .helmignore            # Files to ignore when packaging
+k8s/helm/
+├── README.md                    # This documentation
+├── values-dev.yaml              # Development environment values
+├── values-production.yaml       # Production environment values
+├── values-minimal.yaml          # Minimal deployment values
+├── values-hpc.yaml              # High-performance computing values
+└── keystone-simulation/
+    ├── Chart.yaml               # Chart metadata
+    ├── values.yaml              # Default configuration values
+    ├── templates/
+    │   ├── _helpers.tpl         # Template helpers
+    │   ├── NOTES.txt            # Post-install notes
+    │   ├── namespace.yaml       # Namespace definition
+    │   ├── redis.yaml           # Redis deployment
+    │   ├── celery-worker.yaml   # Celery worker deployment
+    │   ├── fenicsx.yaml         # FEniCSx job template
+    │   ├── lammps.yaml          # LAMMPS job template
+    │   └── openfoam.yaml        # OpenFOAM job template
+    └── .helmignore              # Files to ignore when packaging
 ```
 
 ## Troubleshooting
@@ -334,11 +340,7 @@ affinity:
 helm install keystone-sim ./keystone-simulation \
   -n keystone \
   --create-namespace \
-  --set celeryWorker.replicaCount=1 \
-  --set redis.persistence.size=512Mi \
-  --set fenicsx.resources.limits.memory=2Gi \
-  --set lammps.resources.limits.memory=2Gi \
-  --set openfoam.resources.limits.memory=2Gi
+  -f values-dev.yaml
 ```
 
 ### Production Setup
@@ -348,12 +350,41 @@ helm install keystone-sim ./keystone-simulation \
 helm install keystone-sim ./keystone-simulation \
   -n keystone \
   --create-namespace \
-  --set celeryWorker.replicaCount=10 \
-  --set redis.persistence.size=10Gi \
-  --set redis.persistence.storageClass=fast-ssd \
-  --set fenicsx.resources.limits.memory=32Gi \
-  --set fenicsx.resources.limits.cpu=16000m
+  -f values-production.yaml
 ```
+
+### Minimal Setup
+
+For testing or CI/CD environments:
+
+```bash
+# Install only Redis and Celery workers
+helm install keystone-sim ./keystone-simulation \
+  -n keystone \
+  --create-namespace \
+  -f values-minimal.yaml
+```
+
+### High-Performance Computing
+
+For large-scale simulations:
+
+```bash
+# Install with HPC-optimized resources
+helm install keystone-sim ./keystone-simulation \
+  -n keystone \
+  --create-namespace \
+  -f values-hpc.yaml
+```
+
+### Example Values Files
+
+The chart includes several pre-configured values files:
+
+- **`values-dev.yaml`**: Development environment with minimal resources
+- **`values-production.yaml`**: Production setup with high availability and resources
+- **`values-minimal.yaml`**: Minimal deployment (Redis + Celery only)
+- **`values-hpc.yaml`**: High-performance computing configuration
 
 ## See Also
 

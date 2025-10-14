@@ -1,0 +1,35 @@
+# Minimal Configuration
+# Deploy only essential components for testing
+
+redis:
+  enabled: true
+  persistence:
+    enabled: false  # Use in-memory storage
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+celeryWorker:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+# Disable all simulation tools
+fenicsx:
+  enabled: false
+
+lammps:
+  enabled: false
+
+openfoam:
+  enabled: false

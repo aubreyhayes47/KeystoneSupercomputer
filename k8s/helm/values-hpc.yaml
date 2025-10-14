@@ -1,0 +1,56 @@
+# High-Performance Simulation Configuration
+# Optimized for memory and CPU-intensive simulations
+
+celeryWorker:
+  replicaCount: 5
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "4000m"
+
+redis:
+  persistence:
+    size: 10Gi
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "2000m"
+
+# High-performance simulation configurations
+fenicsx:
+  resources:
+    requests:
+      memory: "8Gi"
+      cpu: "4000m"
+    limits:
+      memory: "64Gi"
+      cpu: "32000m"
+
+lammps:
+  resources:
+    requests:
+      memory: "8Gi"
+      cpu: "4000m"
+    limits:
+      memory: "64Gi"
+      cpu: "32000m"
+
+openfoam:
+  resources:
+    requests:
+      memory: "8Gi"
+      cpu: "4000m"
+    limits:
+      memory: "64Gi"
+      cpu: "32000m"
+
+# Target nodes with high-performance hardware
+nodeSelector:
+  node-type: high-performance
+  workload: simulation

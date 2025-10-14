@@ -1,6 +1,30 @@
 # Kubernetes Manifests for Keystone Supercomputer
 
-This directory contains Kubernetes manifests and configuration for deploying Keystone Supercomputer services on a k3d cluster.
+This directory contains Kubernetes manifests, Helm charts, and configuration for deploying Keystone Supercomputer services on a k3d cluster.
+
+## Deployment Options
+
+You can deploy Keystone Supercomputer using either:
+
+1. **Helm Charts (Recommended)**: Simplified deployment with configurable values - see [helm/README.md](helm/README.md)
+2. **Raw Manifests**: Direct kubectl deployment - see [manifests/](#raw-manifests) below
+
+## Quick Start with Helm
+
+```bash
+# Install the complete simulation stack
+helm install keystone-sim helm/keystone-simulation \
+  -n keystone \
+  --create-namespace
+
+# Or use environment-specific values
+helm install keystone-sim helm/keystone-simulation \
+  -n keystone \
+  --create-namespace \
+  -f helm/values-dev.yaml
+```
+
+For detailed Helm documentation, see [helm/README.md](helm/README.md).
 
 ## Directory Structure
 
@@ -8,14 +32,20 @@ This directory contains Kubernetes manifests and configuration for deploying Key
 k8s/
 ├── configs/
 │   └── k3d-cluster-config.yaml    # k3d cluster configuration
-└── manifests/
-    ├── 00-namespace.yaml           # Keystone namespace
-    ├── 10-redis.yaml               # Redis deployment and service
-    ├── 20-celery-worker.yaml       # Celery worker deployment
-    ├── 30-fenicsx.yaml             # FEniCSx job template
-    ├── 31-lammps.yaml              # LAMMPS job template
-    └── 32-openfoam.yaml            # OpenFOAM job template
+├── helm/                          # Helm charts (recommended)
+│   ├── README.md                  # Helm chart documentation
+│   ├── values-*.yaml              # Example values files
+│   └── keystone-simulation/       # Main Helm chart
+└── manifests/                     # Raw Kubernetes manifests
+    ├── 00-namespace.yaml          # Keystone namespace
+    ├── 10-redis.yaml              # Redis deployment and service
+    ├── 20-celery-worker.yaml      # Celery worker deployment
+    ├── 30-fenicsx.yaml            # FEniCSx job template
+    ├── 31-lammps.yaml             # LAMMPS job template
+    └── 32-openfoam.yaml           # OpenFOAM job template
 ```
+
+## Raw Manifests
 
 ## Manifests Overview
 
@@ -167,7 +197,9 @@ kubectl describe pvc -n keystone redis-data
 
 ## See Also
 
+- [helm/README.md](helm/README.md) - Helm chart documentation (recommended deployment method)
 - [K3D.md](../K3D.md) - Comprehensive k3d documentation
 - [k3d-setup.sh](../k3d-setup.sh) - Cluster setup script
 - [k3d-manage.sh](../k3d-manage.sh) - Cluster management script
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [Helm Documentation](https://helm.sh/docs/)
