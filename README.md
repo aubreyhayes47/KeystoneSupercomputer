@@ -43,7 +43,7 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 ### **Phase 4: Orchestration & Workflows** ✔️ **(Completed)**
 - **Docker Compose:** ✔️ Multi-service orchestration with `docker-compose.yml` - see [DOCKER_COMPOSE.md](DOCKER_COMPOSE.md).
 - **Job Queue:** ✔️ Celery + Redis integration for background task processing with worker service.
-- **Local Kubernetes:** Setup with `k3d`, `kubectl`, and `helm` (pending).
+- **Local Kubernetes:** ✔️ Multi-node k3d cluster setup with `kubectl` and `helm` - see [K3D.md](K3D.md).
 
 ---
 
@@ -155,4 +155,48 @@ result = pipeline.wait_for_task(task_id, timeout=300)
 See [TASK_PIPELINE.md](TASK_PIPELINE.md) for comprehensive documentation and examples.
 
 For direct Celery usage, see [CELERY_QUICK_REFERENCE.md](CELERY_QUICK_REFERENCE.md).
+
+---
+
+## Local Kubernetes with k3d
+
+The project includes a multi-node Kubernetes cluster setup using k3d for advanced orchestration, scaling, and production-like testing. See [K3D.md](K3D.md) for full documentation.
+
+### Quick Start
+
+```bash
+# Create and configure the k3d cluster
+./k3d-setup.sh
+
+# Check cluster status
+kubectl get nodes
+kubectl get pods -n keystone
+
+# Run a simulation
+./k3d-manage.sh run-simulation fenicsx poisson.py
+
+# Scale Celery workers
+./k3d-manage.sh scale celery-worker 5
+
+# View logs
+./k3d-manage.sh logs celery-worker
+
+# Stop the cluster
+./k3d-manage.sh stop
+```
+
+### Cluster Architecture
+
+- **2 Server Nodes**: High-availability control plane
+- **3 Agent Nodes**: Distributed worker nodes
+- **Local Registry**: For custom container images
+- **Load Balancer**: Automatic service load balancing
+
+### Kubernetes Services
+
+- **Redis** - Message broker (ClusterIP)
+- **Celery Workers** - Background job processing (2+ replicas)
+- **Simulation Jobs** - On-demand FEniCSx, LAMMPS, OpenFOAM jobs
+
+See [K3D.md](K3D.md) for comprehensive cluster management, troubleshooting, and advanced usage.
 

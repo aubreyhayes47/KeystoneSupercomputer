@@ -1,0 +1,57 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openfoam-config
+  namespace: keystone
+  labels:
+    app: openfoam
+data:
+  PYTHONUNBUFFERED: "1"
+  SIMULATION_TYPE: "openfoam"
+  FOAM_RUN: "/workspace/foam-run"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openfoam-simulation
+  namespace: keystone
+  labels:
+    app: openfoam
+spec:
+  # Don't automatically create - this is a template for on-demand jobs
+  suspend: true
+  template:
+    metadata:
+      labels:
+        app: openfoam
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: openfoam
+        image: openfoam-toolbox:latest
+        imagePullPolicy: Never
+        envFrom:
+        - configMapRef:
+            name: openfoam-config
+        volumeMounts:
+        - name: openfoam-data
+          mountPath: /data
+        - name: openfoam-workspace
+          mountPath: /workspace
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      volumes:
+      - name: openfoam-data
+        hostPath:
+          path: /data/openfoam
+          type: DirectoryOrCreate
+      - name: openfoam-workspace
+        hostPath:
+          path: /home/runner/work/KeystoneSupercomputer/KeystoneSupercomputer/src/sim-toolbox/openfoam
+          type: Directory

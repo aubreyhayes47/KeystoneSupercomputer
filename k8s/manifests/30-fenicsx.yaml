@@ -1,0 +1,56 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fenicsx-config
+  namespace: keystone
+  labels:
+    app: fenicsx
+data:
+  PYTHONUNBUFFERED: "1"
+  SIMULATION_TYPE: "fenicsx"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fenicsx-simulation
+  namespace: keystone
+  labels:
+    app: fenicsx
+spec:
+  # Don't automatically create - this is a template for on-demand jobs
+  suspend: true
+  template:
+    metadata:
+      labels:
+        app: fenicsx
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: fenicsx
+        image: fenicsx-toolbox:latest
+        imagePullPolicy: Never
+        envFrom:
+        - configMapRef:
+            name: fenicsx-config
+        volumeMounts:
+        - name: fenicsx-data
+          mountPath: /data
+        - name: fenicsx-scripts
+          mountPath: /app
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      volumes:
+      - name: fenicsx-data
+        hostPath:
+          path: /data/fenicsx
+          type: DirectoryOrCreate
+      - name: fenicsx-scripts
+        hostPath:
+          path: /home/runner/work/KeystoneSupercomputer/KeystoneSupercomputer/src/sim-toolbox/fenicsx
+          type: Directory
