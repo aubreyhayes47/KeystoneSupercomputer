@@ -602,7 +602,85 @@ kubectl get pods -n keystone
 
 ### Using Helm Charts
 
-Install Helm charts in the cluster:
+Keystone Supercomputer provides pre-built Helm charts for deploying the entire simulation stack.
+
+#### Deploy with Keystone Helm Chart
+
+Install the complete simulation stack using Helm:
+
+```bash
+# Install the Keystone simulation chart
+helm install keystone-sim k8s/helm/keystone-simulation \
+  --namespace keystone \
+  --create-namespace
+
+# View deployed resources
+kubectl get all -n keystone
+
+# Check installation status
+helm status keystone-sim -n keystone
+
+# List all Helm releases
+helm list -n keystone
+```
+
+#### Customize Deployment
+
+Create a custom values file to override defaults:
+
+```bash
+# Create custom-values.yaml
+cat > custom-values.yaml <<EOF
+celeryWorker:
+  replicaCount: 5
+
+redis:
+  persistence:
+    size: 5Gi
+
+fenicsx:
+  resources:
+    limits:
+      memory: "8Gi"
+      cpu: "4000m"
+EOF
+
+# Install with custom values
+helm install keystone-sim k8s/helm/keystone-simulation \
+  -n keystone \
+  --create-namespace \
+  -f custom-values.yaml
+```
+
+#### Upgrade Deployment
+
+Update the deployment with new configuration:
+
+```bash
+# Upgrade with new values
+helm upgrade keystone-sim k8s/helm/keystone-simulation \
+  -n keystone \
+  --set celeryWorker.replicaCount=10
+
+# Or upgrade with custom values file
+helm upgrade keystone-sim k8s/helm/keystone-simulation \
+  -n keystone \
+  -f custom-values.yaml
+```
+
+#### Uninstall
+
+Remove the Helm deployment:
+
+```bash
+helm uninstall keystone-sim -n keystone
+```
+
+For detailed Helm chart documentation, see [k8s/helm/README.md](k8s/helm/README.md).
+
+#### External Helm Charts
+
+You can also install third-party Helm charts:
 
 ```bash
 # Add Helm repository
@@ -612,9 +690,6 @@ helm repo add bitnami https://charts.bitnami.com/bitnami
 helm install postgres bitnami/postgresql \
   --namespace keystone \
   --set auth.postgresPassword=mysecretpassword
-
-# List releases
-helm list -n keystone
 ```
 
 ### Custom Resource Definitions (CRDs)

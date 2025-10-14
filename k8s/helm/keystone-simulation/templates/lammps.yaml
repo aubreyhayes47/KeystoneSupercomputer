@@ -1,0 +1,71 @@
+{{- if .Values.lammps.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lammps-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: lammps
+    app.kubernetes.io/name: lammps
+    app.kubernetes.io/component: simulation
+    app.kubernetes.io/part-of: keystone-simulation
+    helm.sh/chart: {{ include "keystone-simulation.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  SIMULATION_TYPE: {{ .Values.lammps.config.simulationType | quote }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: lammps-simulation
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: lammps
+    app.kubernetes.io/name: lammps
+    app.kubernetes.io/component: simulation
+    app.kubernetes.io/part-of: keystone-simulation
+    helm.sh/chart: {{ include "keystone-simulation.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  # Don't automatically create - this is a template for on-demand jobs
+  suspend: {{ .Values.lammps.jobTemplate.suspend }}
+  template:
+    metadata:
+      labels:
+        app: lammps
+        app.kubernetes.io/name: lammps
+        app.kubernetes.io/component: simulation
+        app.kubernetes.io/part-of: keystone-simulation
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: lammps
+        image: "{{ .Values.lammps.image.repository }}:{{ .Values.lammps.image.tag }}"
+        imagePullPolicy: {{ .Values.lammps.image.pullPolicy }}
+        envFrom:
+        - configMapRef:
+            name: lammps-config
+        volumeMounts:
+        - name: lammps-data
+          mountPath: /data
+        resources:
+          {{- toYaml .Values.lammps.resources | nindent 10 }}
+      volumes:
+      - name: lammps-data
+        hostPath:
+          path: {{ .Values.lammps.volumes.dataPath }}
+          type: DirectoryOrCreate
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
