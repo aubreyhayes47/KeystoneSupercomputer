@@ -1,0 +1,13 @@
+# Celery and Redis dependencies for Keystone Supercomputer
+# Job queue management and task orchestration
+
+# Core Celery
+celery[redis]==5.3.4
+
+# Redis client
+redis==5.0.1
+
+# Additional dependencies for existing agent code
+langchain-core==0.3.29
+langchain-ollama==0.2.0
+click==8.1.7

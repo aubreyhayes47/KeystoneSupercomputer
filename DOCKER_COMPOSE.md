@@ -9,10 +9,11 @@ This Docker Compose configuration orchestrates multiple services for the Keyston
 The orchestration includes the following services:
 
 1. **Redis** - Message broker and cache for background job queue
-2. **FEniCSx** - Finite Element Method (FEM) simulation service
-3. **LAMMPS** - Molecular Dynamics (MD) simulation service
-4. **OpenFOAM** - Computational Fluid Dynamics (CFD) simulation service
-5. **Agent Service** - Agentic core for orchestration (future enhancement)
+2. **Celery Worker** - Background job processing for simulation tasks
+3. **FEniCSx** - Finite Element Method (FEM) simulation service
+4. **LAMMPS** - Molecular Dynamics (MD) simulation service
+5. **OpenFOAM** - Computational Fluid Dynamics (CFD) simulation service
+6. **Agent Service** - Agentic core for orchestration (future enhancement)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -22,17 +23,21 @@ The orchestration includes the following services:
 │  │  Redis   │  ◄──── Message Broker & Cache             │
 │  └────┬─────┘                                           │
 │       │                                                  │
-│       ├──────► ┌──────────┐                            │
-│       │        │ FEniCSx  │  (FEM Simulations)         │
-│       │        └──────────┘                            │
-│       │                                                  │
-│       ├──────► ┌──────────┐                            │
-│       │        │  LAMMPS  │  (MD Simulations)          │
-│       │        └──────────┘                            │
-│       │                                                  │
-│       ├──────► ┌──────────┐                            │
-│       │        │ OpenFOAM │  (CFD Simulations)         │
-│       │        └──────────┘                            │
+│       ├──────► ┌───────────────┐                       │
+│       │        │ Celery Worker │  (Job Queue)           │
+│       │        └───────┬───────┘                       │
+│       │                │                                 │
+│       │                ├──────► ┌──────────┐           │
+│       │                │        │ FEniCSx  │  (FEM)    │
+│       │                │        └──────────┘           │
+│       │                │                                 │
+│       │                ├──────► ┌──────────┐           │
+│       │                │        │  LAMMPS  │  (MD)     │
+│       │                │        └──────────┘           │
+│       │                │                                 │
+│       │                └──────► ┌──────────┐           │
+│       │                         │ OpenFOAM │  (CFD)    │
+│       │                         └──────────┘           │
 │       │                                                  │
 │       └──────► ┌──────────┐                            │
 │                │  Agent   │  (Orchestration - Future)   │
@@ -96,7 +101,7 @@ docker compose down -v
 
 ### Redis Service
 
-**Purpose:** Message broker and cache for background job queuing (Celery integration planned).
+**Purpose:** Message broker and cache for background job queuing (Celery integration active).
 
 **Port:** `6379` (exposed to host)
 
@@ -113,6 +118,42 @@ docker compose exec redis redis-cli
 # Check Redis status
 docker compose exec redis redis-cli ping
 ```
+
+---
+
+### Celery Worker Service
+
+**Purpose:** Background job processing for simulation task orchestration.
+
+**Broker:** Uses Redis as message broker
+
+**Backend:** Uses Redis for result storage
+
+**Concurrency:** 2 workers by default (configurable via environment)
+
+**Features:**
+- Asynchronous task execution
+- Task progress tracking
+- Result persistence
+- Automatic retries on failure
+- Health monitoring
+
+**Usage:**
+```bash
+# Check worker status
+docker compose ps celery-worker
+
+# View worker logs
+docker compose logs -f celery-worker
+
+# Restart worker
+docker compose restart celery-worker
+```
+
+**Available Tasks:**
+- `run_simulation` - Execute a simulation task
+- `health_check` - Verify worker health
+- `list_simulations` - List available tools and scripts
 
 ---
 
@@ -399,38 +440,169 @@ exit
 docker compose logs redis
 ```
 
+### Workflow 4: Job Queue Management
+
+```bash
+# Start Redis and Celery worker
+docker compose up -d redis celery-worker
+
+# Submit a job programmatically
+python3 << EOF
+from celery_app import run_simulation_task
+task = run_simulation_task.delay(
+    tool="fenicsx",
+    script="poisson.py",
+    params={"mesh_size": 32}
+)
+print(f"Task ID: {task.id}")
+EOF
+
+# Check worker status
+docker compose logs celery-worker
+
+# Monitor Redis queue
+docker compose exec redis redis-cli llen celery
+
+# Run example job submission script
+cd src/agent
+python3 example_job_submission.py
+```
+
 ---
 
 ## Integration with Agentic Core
 
-The Docker Compose setup is designed to integrate with the agentic core for automated orchestration:
+The Docker Compose setup integrates with Celery for automated job queue management and orchestration:
 
-### Future Agent Service
+### Celery Job Queue Integration
 
-The `agent` service (currently commented out) will:
-- Connect to Ollama LLM for decision-making
-- Use Redis for job queuing with Celery
-- Orchestrate simulation workflows
-- Monitor and report results
+The Celery worker service provides background job processing with Redis as the message broker. This enables asynchronous simulation execution and result tracking.
 
-**Planned Integration:**
+**Key Features:**
+- Asynchronous task execution
+- Task progress monitoring
+- Result persistence in Redis
+- Automatic retries on failure
+- Scalable worker pool
+
+### Agent Job Submission
+
+Agents can submit simulation tasks to the job queue using the Celery API:
+
+**Basic Job Submission:**
 ```python
-# Agent decides which simulation to run
-from agent_state import AgentState
-from langchain_ollama import ChatOllama
-
-# Agent submits job to queue
 from celery_app import run_simulation_task
 
+# Submit a simulation task
 task = run_simulation_task.delay(
     tool="fenicsx",
     script="poisson.py",
     params={"mesh_size": 64}
 )
 
-# Monitor task progress
-result = task.get()
+print(f"Task ID: {task.id}")
+print(f"Task State: {task.state}")
 ```
+
+**Monitor Task Progress:**
+```python
+import time
+
+# Poll task status
+while not task.ready():
+    if task.state == 'RUNNING':
+        meta = task.info
+        if isinstance(meta, dict) and 'progress' in meta:
+            print(f"Progress: {meta['progress']}%")
+    time.sleep(2)
+```
+
+**Retrieve Results:**
+```python
+# Get task result (blocking until complete)
+result = task.get(timeout=300)
+
+print(f"Status: {result['status']}")
+print(f"Tool: {result['tool']}")
+print(f"Script: {result['script']}")
+print(f"Return Code: {result['returncode']}")
+
+if result['status'] == 'success':
+    print("Simulation completed successfully!")
+    print(f"Output: {result['stdout']}")
+```
+
+**Complete Example:**
+```python
+# Full agent workflow with job queue
+from agent_state import AgentState
+from langchain_ollama import ChatOllama
+from celery_app import run_simulation_task, health_check_task
+
+# 1. Agent decides which simulation to run (using LLM)
+llm = ChatOllama(model="llama3:8b")
+# ... agent decision logic ...
+
+# 2. Check worker health
+health = health_check_task.delay()
+print(health.get())  # {'status': 'healthy', 'worker': 'operational'}
+
+# 3. Submit job to queue
+task = run_simulation_task.delay(
+    tool="fenicsx",
+    script="poisson.py",
+    params={"mesh_size": 64}
+)
+
+# 4. Monitor task progress
+while not task.ready():
+    time.sleep(2)
+
+# 5. Retrieve and process results
+result = task.get()
+if result['status'] == 'success':
+    # Update agent state with results
+    state = AgentState(
+        messages=[],
+        simulation_params=result['params'],
+        artifact_paths=result.get('artifacts', [])
+    )
+```
+
+**Run the Example:**
+```bash
+# Start services
+docker compose up -d redis celery-worker
+
+# Run example script
+cd src/agent
+python3 example_job_submission.py
+```
+
+### Available Tasks
+
+The Celery worker provides the following tasks:
+
+1. **run_simulation** - Execute a simulation task
+   - Parameters: `tool` (str), `script` (str), `params` (dict)
+   - Returns: Task result with status, output, and artifacts
+
+2. **health_check** - Verify worker health
+   - Parameters: None
+   - Returns: Health status and message
+
+3. **list_simulations** - List available tools and scripts
+   - Parameters: None
+   - Returns: Dictionary of available simulation tools
+
+### Future Agent Service
+
+The `agent` service (currently commented out in docker-compose.yml) will:
+- Connect to Ollama LLM for decision-making
+- Use the Celery job queue for task orchestration
+- Orchestrate complex multi-step workflows
+- Monitor and report results
+- Enable conversational interfaces for simulation management
 
 ---
 
@@ -453,6 +625,51 @@ docker compose restart redis
 
 # Test connection
 docker compose exec redis redis-cli ping
+```
+
+---
+
+### Issue: Celery worker not processing tasks
+
+**Symptom:** Tasks stuck in PENDING state, no worker activity
+
+**Solution:**
+```bash
+# Check if Celery worker is running
+docker compose ps celery-worker
+
+# Check worker logs for errors
+docker compose logs celery-worker
+
+# Restart worker
+docker compose restart celery-worker
+
+# Verify Redis connection
+docker compose exec celery-worker python3 -c "from celery_app import celery_app; print(celery_app.connection().connect())"
+
+# Check task queue in Redis
+docker compose exec redis redis-cli llen celery
+```
+
+---
+
+### Issue: Task execution fails
+
+**Symptom:** Task returns 'failed' or 'error' status
+
+**Solution:**
+```bash
+# Check worker logs for detailed error
+docker compose logs celery-worker | tail -50
+
+# Verify Docker socket is mounted
+docker compose exec celery-worker ls -l /var/run/docker.sock
+
+# Test docker command inside worker
+docker compose exec celery-worker docker ps
+
+# Check if simulation images are built
+docker images | grep -E "fenicsx|lammps|openfoam"
 ```
 
 ---
@@ -638,7 +855,7 @@ docker compose --profile simulation --profile agent up -d
    ```bash
    docker compose config  # Validate syntax
    docker compose build   # Build images
-   docker compose up -d redis  # Start Redis
+   docker compose up -d redis celery-worker  # Start Redis and Celery
    ```
 
 2. **Run integration tests:**
@@ -647,15 +864,20 @@ docker compose --profile simulation --profile agent up -d
    python3 integration_test.py --build
    ```
 
-3. **Integrate with Celery:**
-   - Create `celery_app.py` for background tasks
-   - Configure Celery workers to use Redis backend
-   - Define simulation tasks for queued execution
+3. **Test Celery job queue:**
+   ```bash
+   # Run example job submission
+   cd src/agent
+   python3 example_job_submission.py
+   
+   # Or submit jobs programmatically
+   python3 -c "from celery_app import health_check_task; print(health_check_task.delay().get())"
+   ```
 
 4. **Enable Agent Service:**
    - Uncomment agent service in `docker-compose.yml`
    - Create agent Dockerfile
-   - Connect to Ollama and Redis
+   - Connect to Ollama and Celery job queue
 
 ---
 
