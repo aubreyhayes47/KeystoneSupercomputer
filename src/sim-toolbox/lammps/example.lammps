@@ -1,0 +1,44 @@
+# LAMMPS input script: Lennard-Jones fluid simulation
+# Demonstrates basic molecular dynamics with LAMMPS
+# This is a minimal example for testing the LAMMPS toolbox
+
+# Initialization
+units           lj
+atom_style      atomic
+dimension       3
+boundary        p p p
+
+# Create simulation box and atoms
+lattice         fcc 0.8442
+region          box block 0 10 0 10 0 10
+create_box      1 box
+create_atoms    1 box
+mass            1 1.0
+
+# Define potential
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5
+
+# Set initial velocities
+velocity        all create 1.44 87287 loop geom
+
+# Neighbor list settings
+neighbor        0.3 bin
+neigh_modify    delay 0 every 20 check no
+
+# Time integration
+fix             1 all nve
+
+# Output settings
+thermo          100
+thermo_style    custom step temp pe ke etotal press
+
+# Dump trajectory (optional)
+dump            1 all atom 100 /data/output/trajectory.lammpstrj
+
+# Run simulation
+timestep        0.005
+run             1000
+
+# Write final configuration
+write_data      /data/output/final.data

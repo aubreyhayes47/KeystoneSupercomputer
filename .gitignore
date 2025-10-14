@@ -15,5 +15,8 @@ data/
 results/
 logs/
 
+# Simulation outputs
+src/sim-toolbox/*/output/
+
 # Docker Compose override
 docker-compose.override.yml
