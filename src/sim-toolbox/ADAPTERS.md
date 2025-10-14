@@ -2,6 +2,8 @@
 
 This directory contains Python adapter scripts for containerized simulation tools in the Keystone Supercomputer project. These adapters provide a standardized interface for running simulations, parsing results, and enabling agentic orchestration.
 
+**Quick Start:** See [QUICK_START.md](./QUICK_START.md) for running the integration test.
+
 ## Overview
 
 Each simulation toolbox (FEniCSx, LAMMPS, OpenFOAM) has a corresponding Python adapter that:
