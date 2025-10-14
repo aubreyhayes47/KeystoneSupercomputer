@@ -32,14 +32,14 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 
 ---
 
-### **Phase 3: Simulation Toolbox** ⏳ **(In Progress)**
+### **Phase 3: Simulation Toolbox** ✔️ **(Completed)**
 - **Containerized Tools:** Scaffolded `sim-toolbox` directory; Dockerfile and demo for FEniCSx in progress.
 - **Standardized Entrypoints:** Planning `/data` volume mounts and uniform container interfaces.
 - **Tool Adapter Pattern:** Writing Python adapters for simulation tools.
 
 ---
 
-### **Phase 4: Orchestration & Workflows** 🔜 **(Upcoming)**
+### **Phase 4: Orchestration & Workflows** ⏳ **(In Progress)**
 - **Docker Compose:** Multi-service orchestration.
 - **Job Queue:** Celery + Redis integration for background tasks.
 - **Local Kubernetes:** Setup with `k3d`, `kubectl`, and `helm`.
