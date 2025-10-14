@@ -1,0 +1,9 @@
+# Exclude unnecessary files from Docker build context
+.git
+.gitignore
+output/
+results/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
