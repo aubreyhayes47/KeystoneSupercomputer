@@ -41,8 +41,8 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 ---
 
 ### **Phase 4: Orchestration & Workflows** ⏳ **(In Progress)**
-- **Docker Compose:** Multi-service orchestration.
-- **Job Queue:** Celery + Redis integration for background tasks.
+- **Docker Compose:** ✔️ Multi-service orchestration with `docker-compose.yml` - see [DOCKER_COMPOSE.md](DOCKER_COMPOSE.md).
+- **Job Queue:** Celery + Redis integration for background tasks (Redis configured, Celery integration pending).
 - **Local Kubernetes:** Setup with `k3d`, `kubectl`, and `helm`.
 
 ---
@@ -99,3 +99,34 @@ Clone the repo and see the latest phase’s instructions or open an issue for he
 Project is evolving—please check back for new documentation, examples, and simulation tool adapters.
 
 ---
+
+## Docker Compose Orchestration
+
+The project includes a comprehensive Docker Compose setup for multi-service orchestration. See [DOCKER_COMPOSE.md](DOCKER_COMPOSE.md) for full documentation.
+
+### Quick Start
+
+```bash
+# Run the quick start script
+./docker-compose-quickstart.sh
+
+# Build simulation images
+docker compose build
+
+# Run a test simulation
+docker compose run --rm fenicsx poisson.py
+
+# Start Redis service
+docker compose up -d redis
+
+# Stop all services
+docker compose down
+```
+
+### Available Services
+
+- **Redis** - Message broker for job queuing
+- **FEniCSx** - Finite Element Method simulations
+- **LAMMPS** - Molecular Dynamics simulations
+- **OpenFOAM** - Computational Fluid Dynamics simulations
+

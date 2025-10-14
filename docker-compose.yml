@@ -1,0 +1,105 @@
+services:
+  # Redis - Message broker and cache for background job queue
+  redis:
+    image: redis:7-alpine
+    container_name: keystone-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - keystone-network
+    restart: unless-stopped
+
+  # FEniCSx Simulation Service
+  fenicsx:
+    build:
+      context: ./src/sim-toolbox/fenicsx
+      dockerfile: Dockerfile
+    image: fenicsx-toolbox:latest
+    container_name: keystone-fenicsx
+    volumes:
+      - ./data/fenicsx:/data
+      - ./src/sim-toolbox/fenicsx:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SIMULATION_TYPE=fenicsx
+    networks:
+      - keystone-network
+    # Service runs on-demand, not continuously
+    profiles:
+      - simulation
+
+  # LAMMPS Simulation Service
+  lammps:
+    build:
+      context: ./src/sim-toolbox/lammps
+      dockerfile: Dockerfile
+    image: keystone/lammps:latest
+    container_name: keystone-lammps
+    volumes:
+      - ./data/lammps:/data
+    environment:
+      - SIMULATION_TYPE=lammps
+    networks:
+      - keystone-network
+    # Service runs on-demand, not continuously
+    profiles:
+      - simulation
+
+  # OpenFOAM Simulation Service
+  openfoam:
+    build:
+      context: ./src/sim-toolbox/openfoam
+      dockerfile: Dockerfile
+    image: openfoam-toolbox:latest
+    container_name: keystone-openfoam
+    volumes:
+      - ./data/openfoam:/data
+      - ./src/sim-toolbox/openfoam:/workspace
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SIMULATION_TYPE=openfoam
+      - FOAM_RUN=/workspace/foam-run
+    networks:
+      - keystone-network
+    # Service runs on-demand, not continuously
+    profiles:
+      - simulation
+
+  # Agent Service - CLI and orchestration (future enhancement)
+  # Uncomment when ready to integrate with the agentic core
+  # agent:
+  #   build:
+  #     context: ./src/agent
+  #     dockerfile: Dockerfile
+  #   image: keystone-agent:latest
+  #   container_name: keystone-agent
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./src/agent:/app
+  #     - ./data:/data
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379
+  #     - OLLAMA_BASE_URL=http://host.docker.internal:11434
+  #   networks:
+  #     - keystone-network
+  #   stdin_open: true
+  #   tty: true
+
+networks:
+  keystone-network:
+    driver: bridge
+    name: keystone-network
+
+volumes:
+  redis-data:
+    name: keystone-redis-data
