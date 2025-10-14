@@ -123,8 +123,7 @@ docker compose exec redis redis-cli ping
 **Image:** `fenicsx-toolbox:latest`
 
 **Volumes:**
-- `./data/fenicsx/input:/data/input` - Input files and scripts
-- `./data/fenicsx/output:/data/output` - Simulation results
+- `./data/fenicsx:/data` - All data (input scripts and output results)
 - `./src/sim-toolbox/fenicsx:/app` - Source code (for development)
 
 **Environment Variables:**
@@ -134,12 +133,11 @@ docker compose exec redis redis-cli ping
 **Example Usage:**
 ```bash
 # Run default Poisson equation
-docker compose run --rm fenicsx python3 poisson.py
+docker compose run --rm fenicsx poisson.py
 
-# Run custom script with mounted input
-mkdir -p data/fenicsx/input
-cp my_script.py data/fenicsx/input/
-docker compose run --rm fenicsx python3 /data/input/my_script.py
+# Run custom script with mounted data
+cp my_script.py data/fenicsx/
+docker compose run --rm fenicsx /data/my_script.py
 
 # Interactive shell for debugging
 docker compose run --rm fenicsx bash
@@ -165,8 +163,7 @@ result = adapter.run_simulation()
 **Image:** `keystone/lammps:latest`
 
 **Volumes:**
-- `./data/lammps/input:/data/input` - LAMMPS input scripts
-- `./data/lammps/output:/data/output` - Trajectory and output files
+- `./data/lammps:/data` - All data (input scripts and output results)
 
 **Environment Variables:**
 - `SIMULATION_TYPE=lammps` - Service identifier
@@ -174,12 +171,11 @@ result = adapter.run_simulation()
 **Example Usage:**
 ```bash
 # Run example Lennard-Jones simulation
-mkdir -p data/lammps/input data/lammps/output
-cp src/sim-toolbox/lammps/example.lammps data/lammps/input/
-docker compose run --rm lammps lmp -in /data/input/example.lammps
+cp src/sim-toolbox/lammps/example.lammps data/lammps/
+docker compose run --rm lammps lmp -in /data/example.lammps
 
 # Check output
-ls data/lammps/output/
+ls data/lammps/
 
 # Interactive LAMMPS shell
 docker compose run --rm lammps bash
@@ -208,8 +204,7 @@ result = adapter.run_simulation(
 **Image:** `openfoam-toolbox:latest`
 
 **Volumes:**
-- `./data/openfoam/input:/data/input` - Case setup files
-- `./data/openfoam/output:/data/output` - Solver results and logs
+- `./data/openfoam:/data` - All data (case files and results)
 - `./src/sim-toolbox/openfoam:/workspace` - Scripts and utilities
 
 **Environment Variables:**
@@ -223,12 +218,11 @@ result = adapter.run_simulation(
 docker compose run --rm openfoam python3 /workspace/example_cavity.py
 
 # Run existing OpenFOAM case
-mkdir -p data/openfoam/input
-cp -r my_case/ data/openfoam/input/
-docker compose run --rm openfoam bash -c "cd /data/input/my_case && blockMesh && icoFoam"
+cp -r my_case/ data/openfoam/
+docker compose run --rm openfoam bash -c "cd /data/my_case && blockMesh && icoFoam"
 
 # Check solver output
-ls data/openfoam/output/
+ls data/openfoam/
 
 # Interactive shell
 docker compose run --rm openfoam bash
@@ -286,33 +280,27 @@ See `.env.example` for a complete template.
 All simulation services use standardized volume mount patterns:
 
 ```
-./data/<service>/input  → /data/input   (in container)
-./data/<service>/output → /data/output  (in container)
+./data/<service>  → /data  (in container)
 ```
 
 This ensures:
 - **Consistent paths** across all services
 - **Easy data transfer** between host and container
 - **Persistent results** after container shutdown
+- **Simplified management** with a single mount point per service
 
 #### Creating Data Directories
 
 ```bash
 # Create all required data directories
-mkdir -p data/{fenicsx,lammps,openfoam}/{input,output}
+mkdir -p data/{fenicsx,lammps,openfoam}
 
 # Verify structure
 tree data/
 # data/
 # ├── fenicsx
-# │   ├── input
-# │   └── output
 # ├── lammps
-# │   ├── input
-# │   └── output
 # └── openfoam
-#     ├── input
-#     └── output
 ```
 
 ---

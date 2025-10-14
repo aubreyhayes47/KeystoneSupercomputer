@@ -25,8 +25,7 @@ services:
     image: fenicsx-toolbox:latest
     container_name: keystone-fenicsx
     volumes:
-      - ./data/fenicsx/input:/data/input
-      - ./data/fenicsx/output:/data/output
+      - ./data/fenicsx:/data
       - ./src/sim-toolbox/fenicsx:/app
     environment:
       - PYTHONUNBUFFERED=1
@@ -45,8 +44,7 @@ services:
     image: keystone/lammps:latest
     container_name: keystone-lammps
     volumes:
-      - ./data/lammps/input:/data/input
-      - ./data/lammps/output:/data/output
+      - ./data/lammps:/data
     environment:
       - SIMULATION_TYPE=lammps
     networks:
@@ -63,8 +61,7 @@ services:
     image: openfoam-toolbox:latest
     container_name: keystone-openfoam
     volumes:
-      - ./data/openfoam/input:/data/input
-      - ./data/openfoam/output:/data/output
+      - ./data/openfoam:/data
       - ./src/sim-toolbox/openfoam:/workspace
     environment:
       - PYTHONUNBUFFERED=1

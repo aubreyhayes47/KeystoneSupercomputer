@@ -49,7 +49,7 @@ fi
 
 # Create data directories
 print_info "Creating data directories..."
-mkdir -p data/{fenicsx,lammps,openfoam}/{input,output}
+mkdir -p data/{fenicsx,lammps,openfoam}
 print_success "Data directories created"
 
 # Create .env file if it doesn't exist
@@ -96,7 +96,7 @@ echo "1. Build simulation images:"
 echo "   docker compose build"
 echo ""
 echo "2. Run a test simulation:"
-echo "   docker compose run --rm fenicsx python3 poisson.py"
+echo "   docker compose run --rm fenicsx poisson.py"
 echo ""
 echo "3. Run integration tests:"
 echo "   cd src/sim-toolbox"

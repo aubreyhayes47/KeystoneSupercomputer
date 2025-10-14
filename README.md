@@ -114,7 +114,7 @@ The project includes a comprehensive Docker Compose setup for multi-service orch
 docker compose build
 
 # Run a test simulation
-docker compose run --rm fenicsx python3 poisson.py
+docker compose run --rm fenicsx poisson.py
 
 # Start Redis service
 docker compose up -d redis
