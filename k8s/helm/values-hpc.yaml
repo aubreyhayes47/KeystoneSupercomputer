@@ -1,5 +1,7 @@
 # High-Performance Simulation Configuration
 # Optimized for memory and CPU-intensive simulations
+# Supports parallel execution with OpenMP and MPI
+# All simulation containers include OpenMP and MPI support for multi-core parallelism
 
 celeryWorker:
   replicaCount: 5
@@ -23,6 +25,7 @@ redis:
       cpu: "2000m"
 
 # High-performance simulation configurations
+# Resource limits support multi-core parallel execution via OpenMP/MPI
 fenicsx:
   resources:
     requests:

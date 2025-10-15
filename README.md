@@ -49,6 +49,7 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 
 ---
 
+
 ### **Phase 5: Performance Optimization** ⏳ **(In Progress)**
 - **Hardware Acceleration:** GPU/NPU access in containers - see [GPU_ACCELERATION.md](GPU_ACCELERATION.md).
 - **Parallelism:** OpenMP/MPI configuration.
@@ -120,6 +121,8 @@ python3 cli.py submit fenicsx poisson.py --wait
 ### Documentation Quick Links
 
 - **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
+- **[PARALLEL_SIMULATIONS.md](PARALLEL_SIMULATIONS.md)** - OpenMP and MPI parallel computing guide
+- **[PARALLEL_EXAMPLES.md](PARALLEL_EXAMPLES.md)** - Quick parallel execution examples
 - **[GPU_ACCELERATION.md](GPU_ACCELERATION.md)** - GPU/NPU hardware acceleration setup
 - **[CLI_REFERENCE.md](CLI_REFERENCE.md)** - CLI command reference
 - **[TASK_PIPELINE.md](TASK_PIPELINE.md)** - Python API documentation

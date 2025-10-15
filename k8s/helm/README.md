@@ -423,10 +423,33 @@ The chart includes several pre-configured values files:
 - **`values-dev.yaml`**: Development environment with minimal resources
 - **`values-production.yaml`**: Production setup with high availability and resources
 - **`values-minimal.yaml`**: Minimal deployment (Redis + Celery only)
-- **`values-hpc.yaml`**: High-performance computing configuration
+- **`values-hpc.yaml`**: High-performance computing configuration with OpenMP/MPI support
+
+### Parallel Computing Support
+
+All simulation containers include OpenMP and MPI support for multi-core and distributed parallel computing.
+
+**Configure OpenMP**:
+```yaml
+lammps:
+  config:
+    ompNumThreads: "4"    # Number of OpenMP threads
+    ompProcBind: "spread" # Thread affinity
+    ompPlaces: "threads"  # Placement strategy
+```
+
+**Run MPI jobs**:
+```bash
+# Create a job that runs with MPI
+kubectl create job -n keystone lammps-mpi --from=job/lammps-simulation \
+  -- mpirun -np 4 --allow-run-as-root lmp -in /data/input.lammps
+```
+
+See [PARALLEL_SIMULATIONS.md](../../PARALLEL_SIMULATIONS.md) for comprehensive parallel computing documentation.
 
 ## See Also
 
 - [K3D Setup Guide](../../K3D.md)
 - [Kubernetes Manifests](../manifests/)
+- [Parallel Simulations Guide](../../PARALLEL_SIMULATIONS.md)
 - [Keystone Documentation](../../README.md)

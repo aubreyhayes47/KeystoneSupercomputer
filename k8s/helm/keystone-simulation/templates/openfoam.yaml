@@ -16,6 +16,9 @@ data:
   PYTHONUNBUFFERED: "1"
   SIMULATION_TYPE: {{ .Values.openfoam.config.simulationType | quote }}
   FOAM_RUN: {{ .Values.openfoam.config.foamRun | quote }}
+  OMP_NUM_THREADS: {{ .Values.openfoam.config.ompNumThreads | default "1" | quote }}
+  OMP_PROC_BIND: {{ .Values.openfoam.config.ompProcBind | default "spread" | quote }}
+  OMP_PLACES: {{ .Values.openfoam.config.ompPlaces | default "threads" | quote }}
 ---
 apiVersion: batch/v1
 kind: Job

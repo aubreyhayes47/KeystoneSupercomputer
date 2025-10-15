@@ -14,6 +14,9 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
   SIMULATION_TYPE: {{ .Values.lammps.config.simulationType | quote }}
+  OMP_NUM_THREADS: {{ .Values.lammps.config.ompNumThreads | default "1" | quote }}
+  OMP_PROC_BIND: {{ .Values.lammps.config.ompProcBind | default "spread" | quote }}
+  OMP_PLACES: {{ .Values.lammps.config.ompPlaces | default "threads" | quote }}
 ---
 apiVersion: batch/v1
 kind: Job
