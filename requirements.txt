@@ -10,6 +10,7 @@ redis==4.6.0
 # Additional dependencies for existing agent code
 langchain-core==0.3.29
 langchain-ollama==0.2.0
+langgraph==0.2.59
 click==8.1.7
 
 # Resource monitoring
