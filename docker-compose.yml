@@ -18,6 +18,8 @@ services:
     restart: unless-stopped
 
   # FEniCSx Simulation Service
+  # Supports MPI for parallel execution
+  # Usage: docker compose run --rm fenicsx mpirun -np 4 python3 script.py
   fenicsx:
     build:
       context: ./src/sim-toolbox/fenicsx
@@ -37,6 +39,9 @@ services:
       - simulation
 
   # LAMMPS Simulation Service
+  # Supports both OpenMP and MPI for parallel execution
+  # Usage: docker compose run --rm lammps mpirun -np 4 --allow-run-as-root lmp -in input.lammps
+  #    or: docker compose run --rm -e OMP_NUM_THREADS=4 lammps lmp -in input.lammps
   lammps:
     build:
       context: ./src/sim-toolbox/lammps
@@ -54,6 +59,9 @@ services:
       - simulation
 
   # OpenFOAM Simulation Service
+  # Supports MPI for parallel execution
+  # Usage: docker compose run --rm openfoam decomposePar && \
+  #        docker compose run --rm openfoam mpirun -np 4 --allow-run-as-root simpleFoam -parallel
   openfoam:
     build:
       context: ./src/sim-toolbox/openfoam
