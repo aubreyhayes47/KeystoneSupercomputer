@@ -228,6 +228,7 @@ k8s/helm/
 ├── values-production.yaml       # Production environment values
 ├── values-minimal.yaml          # Minimal deployment values
 ├── values-hpc.yaml              # High-performance computing values
+├── values-gpu.yaml              # GPU-enabled configuration
 └── keystone-simulation/
     ├── Chart.yaml               # Chart metadata
     ├── values.yaml              # Default configuration values
@@ -242,6 +243,44 @@ k8s/helm/
     │   └── openfoam.yaml        # OpenFOAM job template
     └── .helmignore              # Files to ignore when packaging
 ```
+
+## GPU/NPU Acceleration
+
+Keystone Simulation supports GPU and NPU hardware acceleration. See [GPU_ACCELERATION.md](../../GPU_ACCELERATION.md) for comprehensive setup instructions.
+
+### Quick Start with GPU
+
+```bash
+# Install with NVIDIA GPU support
+helm install keystone-sim ./keystone-simulation \
+  -n keystone --create-namespace \
+  -f values-gpu.yaml
+
+# Custom GPU configuration
+helm install keystone-sim ./keystone-simulation \
+  -n keystone --create-namespace \
+  -f values-gpu.yaml \
+  --set fenicsx.resources.limits.nvidia\.com/gpu=2
+```
+
+### Prerequisites
+
+Before deploying with GPU support:
+
+1. **NVIDIA GPU**: Install [NVIDIA GPU Operator](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/index.html)
+2. **Intel GPU**: Install [Intel Device Plugin](https://github.com/intel/intel-device-plugins-for-kubernetes)
+3. **AMD GPU**: Install [AMD Device Plugin](https://github.com/RadeonOpenCompute/k8s-device-plugin)
+
+### Available GPU Configurations
+
+The `values-gpu.yaml` file includes configurations for:
+- NVIDIA GPU resource limits
+- Intel GPU/NPU resource limits (commented examples)
+- AMD GPU resource limits (commented examples)
+- GPU node selection and tolerations
+- Multi-GPU configurations
+
+See [values-gpu.yaml](values-gpu.yaml) for full details.
 
 ## Troubleshooting
 

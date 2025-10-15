@@ -18,6 +18,7 @@ services:
     restart: unless-stopped
 
   # FEniCSx Simulation Service
+  # For GPU acceleration, see docker-compose.gpu.yml and GPU_ACCELERATION.md
   fenicsx:
     build:
       context: ./src/sim-toolbox/fenicsx
@@ -37,6 +38,7 @@ services:
       - simulation
 
   # LAMMPS Simulation Service
+  # For GPU acceleration, see docker-compose.gpu.yml and GPU_ACCELERATION.md
   lammps:
     build:
       context: ./src/sim-toolbox/lammps
@@ -54,6 +56,7 @@ services:
       - simulation
 
   # OpenFOAM Simulation Service
+  # For GPU acceleration, see docker-compose.gpu.yml and GPU_ACCELERATION.md
   openfoam:
     build:
       context: ./src/sim-toolbox/openfoam
