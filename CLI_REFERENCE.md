@@ -639,11 +639,193 @@ Solution: Increase timeout:
 python3 cli.py submit fenicsx poisson.py --wait --timeout 600
 ```
 
+---
+
+## Benchmark Commands
+
+The CLI includes commands for running performance benchmarks and comparing simulation performance across different hardware configurations.
+
+### `benchmark run`
+
+Run a performance benchmark for simulation tools.
+
+**Usage:**
+```bash
+python3 cli.py benchmark run [OPTIONS]
+```
+
+**Options:**
+- `--tool [fenicsx|lammps|openfoam|all]` - Simulation tool to benchmark (default: fenicsx)
+- `--device [cpu|gpu|intel-gpu|all]` - Device type for benchmark (default: cpu)
+- `--runs INTEGER` - Number of benchmark runs (default: 3)
+- `--results-dir TEXT` - Directory for benchmark results
+
+**Examples:**
+
+Run CPU benchmark for FEniCSx:
+```bash
+python3 cli.py benchmark run --tool fenicsx --device cpu --runs 5
+```
+
+Run GPU benchmark for all tools:
+```bash
+python3 cli.py benchmark run --tool all --device gpu --runs 3
+```
+
+Compare CPU vs GPU for LAMMPS:
+```bash
+# Run CPU benchmark
+python3 cli.py benchmark run --tool lammps --device cpu --runs 5
+
+# Run GPU benchmark
+python3 cli.py benchmark run --tool lammps --device gpu --runs 5
+```
+
+### `benchmark compare`
+
+Compare two benchmark results to see performance differences.
+
+**Usage:**
+```bash
+python3 cli.py benchmark compare BASELINE_ID COMPARISON_ID [OPTIONS]
+```
+
+**Arguments:**
+- `BASELINE_ID` - Benchmark ID for baseline (e.g., fenicsx-cpu-20241015-120000)
+- `COMPARISON_ID` - Benchmark ID to compare against baseline
+
+**Options:**
+- `--results-dir TEXT` - Directory for benchmark results
+
+**Example:**
+```bash
+python3 cli.py benchmark compare fenicsx-cpu-20241015-120000 fenicsx-gpu-20241015-120500
+```
+
+**Output:**
+```
+======================================================================
+Benchmark Comparison
+======================================================================
+
+Baseline: fenicsx-cpu-20241015-120000
+  Device: cpu
+  Duration: 12.345s
+
+Comparison: fenicsx-gpu-20241015-120500
+  Device: gpu
+  Duration: 3.456s
+
+Results:
+  Speedup: 3.57x
+  Time Saved: 8.889s
+  Performance Change: -72.00%
+======================================================================
+```
+
+### `benchmark report`
+
+Generate a comprehensive markdown report of all benchmark results.
+
+**Usage:**
+```bash
+python3 cli.py benchmark report [OPTIONS]
+```
+
+**Options:**
+- `--results-dir TEXT` - Directory for benchmark results
+- `--output TEXT` - Output file for report (default: BENCHMARK_REPORT.md)
+
+**Example:**
+```bash
+python3 cli.py benchmark report --output MY_BENCHMARK_REPORT.md
+```
+
+**Output:**
+```
+✓ Report generated: /tmp/keystone_benchmarks/BENCHMARK_REPORT.md
+
+Report summary:
+  Total benchmarks: 6
+  Tools tested: fenicsx, lammps, openfoam
+    - fenicsx: 2 benchmarks
+    - lammps: 2 benchmarks
+    - openfoam: 2 benchmarks
+```
+
+### `benchmark list`
+
+List all stored benchmark results.
+
+**Usage:**
+```bash
+python3 cli.py benchmark list [OPTIONS]
+```
+
+**Options:**
+- `--results-dir TEXT` - Directory for benchmark results
+
+**Example:**
+```bash
+python3 cli.py benchmark list
+```
+
+**Output:**
+```
+======================================================================
+Benchmark Results (6 total)
+======================================================================
+
+ID: fenicsx-cpu-20241015-120000
+  Tool: fenicsx
+  Device: cpu
+  Duration: 12.345s
+  Success Rate: 100.0%
+
+ID: fenicsx-gpu-20241015-120500
+  Tool: fenicsx
+  Device: gpu
+  Duration: 3.456s
+  Success Rate: 100.0%
+
+...
+```
+
+### Benchmark Workflow Example
+
+Complete workflow for benchmarking and comparing performance:
+
+```bash
+# 1. Run CPU benchmark
+python3 cli.py benchmark run --tool fenicsx --device cpu --runs 5
+
+# Note the benchmark ID from output (e.g., fenicsx-cpu-20241015-120000)
+
+# 2. Run GPU benchmark
+python3 cli.py benchmark run --tool fenicsx --device gpu --runs 5
+
+# Note the benchmark ID from output (e.g., fenicsx-gpu-20241015-120500)
+
+# 3. Compare results
+python3 cli.py benchmark compare fenicsx-cpu-20241015-120000 fenicsx-gpu-20241015-120500
+
+# 4. Generate comprehensive report
+python3 cli.py benchmark report
+
+# 5. List all benchmarks
+python3 cli.py benchmark list
+```
+
+For more information on benchmarking, see [BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md).
+
+---
+
 ## Related Documentation
 
 - [Task Pipeline API](TASK_PIPELINE.md) - Lower-level Python API
 - [Docker Compose Setup](DOCKER_COMPOSE.md) - Service orchestration
 - [Celery Quick Reference](CELERY_QUICK_REFERENCE.md) - Celery details
+- [Benchmark Guide](BENCHMARK_GUIDE.md) - Performance benchmarking documentation
 
 ## Future Enhancements
 
