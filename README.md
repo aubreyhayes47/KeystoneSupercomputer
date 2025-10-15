@@ -54,6 +54,7 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 - **Hardware Acceleration:** GPU/NPU access in containers - see [GPU_ACCELERATION.md](GPU_ACCELERATION.md).
 - **Performance Benchmarking:** ✔️ Standardized benchmarks for CPU vs GPU/NPU performance comparison - see [BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md).
 - **Container Optimization:** ✔️ Optimized container images for size, build time, and runtime performance - see [CONTAINER_OPTIMIZATION.md](CONTAINER_OPTIMIZATION.md).
+- **Resource Profiling:** ✔️ Comprehensive resource profiling for CPU, memory, GPU, I/O during simulations - see [RESOURCE_PROFILING.md](RESOURCE_PROFILING.md).
 - **Parallelism:** OpenMP/MPI configuration.
 
 ---
@@ -128,6 +129,7 @@ python3 cli.py submit fenicsx poisson.py --wait
 - **[GPU_ACCELERATION.md](GPU_ACCELERATION.md)** - GPU/NPU hardware acceleration setup
 - **[CONTAINER_OPTIMIZATION.md](CONTAINER_OPTIMIZATION.md)** - Container image optimization techniques
 - **[BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md)** - Performance benchmarking and comparison
+- **[RESOURCE_PROFILING.md](RESOURCE_PROFILING.md)** - Comprehensive resource profiling and analysis
 - **[CLI_REFERENCE.md](CLI_REFERENCE.md)** - CLI command reference
 - **[TASK_PIPELINE.md](TASK_PIPELINE.md)** - Python API documentation
 - **[DOCKER_COMPOSE.md](DOCKER_COMPOSE.md)** - Docker Compose setup
@@ -194,6 +196,7 @@ python3 cli.py job-details <task-id>
 Keystone Supercomputer includes comprehensive monitoring for all simulation jobs with automatic tracking of:
 
 - **Resource Usage**: CPU time, memory consumption, execution duration
+- **Resource Profiling**: Detailed CPU, memory, GPU, I/O statistics during execution
 - **Job Outcomes**: Success/failure status with detailed error information
 - **Job History**: Persistent storage of all job executions
 - **Statistics**: Aggregate metrics by tool and overall success rates
@@ -206,6 +209,7 @@ Every job is automatically tracked with:
 - Total execution duration
 - Job status (success, failed, timeout, error)
 - Detailed error messages for failures
+- **NEW**: Comprehensive resource profiling with CPU, memory, GPU, and I/O metrics over time
 
 ### Quick Examples
 
@@ -216,7 +220,7 @@ python3 cli.py job-history --limit 20
 # Show aggregate statistics
 python3 cli.py job-stats
 
-# Get details for a specific job
+# Get details for a specific job (includes detailed profile)
 python3 cli.py job-details <task-id>
 
 # Filter by tool or status
@@ -225,9 +229,9 @@ python3 cli.py job-history --tool fenicsx --status failed
 
 ### Job History Storage
 
-Job history is stored in `/tmp/keystone_jobs/jobs_history.jsonl` as newline-delimited JSON with complete resource metrics for each execution.
+Job history is stored in `/tmp/keystone_jobs/jobs_history.jsonl` as newline-delimited JSON with complete resource metrics and detailed profiling data for each execution.
 
-For comprehensive documentation, see [JOB_MONITORING.md](JOB_MONITORING.md).
+For comprehensive documentation, see [JOB_MONITORING.md](JOB_MONITORING.md) and [RESOURCE_PROFILING.md](RESOURCE_PROFILING.md).
 
 ---
 
