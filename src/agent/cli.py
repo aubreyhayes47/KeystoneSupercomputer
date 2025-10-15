@@ -564,5 +564,183 @@ def job_details(task_id):
         click.echo(click.style(f"✗ Failed to get job details: {e}", fg='red'))
         raise click.Abort()
 
+
+# Benchmark Commands
+@cli.group()
+def benchmark():
+    """Run performance benchmarks for simulation tools."""
+    pass
+
+
+@benchmark.command('run')
+@click.option('--tool', type=click.Choice(['fenicsx', 'lammps', 'openfoam', 'all']), 
+              default='fenicsx', help='Simulation tool to benchmark')
+@click.option('--device', type=click.Choice(['cpu', 'gpu', 'intel-gpu', 'all']), 
+              default='cpu', help='Device type for benchmark')
+@click.option('--runs', default=3, help='Number of benchmark runs')
+@click.option('--results-dir', help='Directory for benchmark results')
+def benchmark_run(tool, device, runs, results_dir):
+    """Run a performance benchmark."""
+    try:
+        # Import here to avoid dependency issues
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from benchmark import BenchmarkRunner
+        
+        click.echo(click.style(f"\n{'='*70}", fg='cyan'))
+        click.echo(click.style("Keystone Supercomputer - Performance Benchmark", bold=True, fg='cyan'))
+        click.echo(click.style(f"{'='*70}\n", fg='cyan'))
+        
+        runner = BenchmarkRunner(results_dir=results_dir)
+        
+        tools = ['fenicsx', 'lammps', 'openfoam'] if tool == 'all' else [tool]
+        devices = ['cpu', 'gpu', 'intel-gpu'] if device == 'all' else [device]
+        
+        results = []
+        for t in tools:
+            for d in devices:
+                try:
+                    click.echo(f"\nRunning {t} benchmark on {d}...")
+                    result = runner.run_benchmark(t, device=d, runs=runs)
+                    results.append(result)
+                    
+                    # Show summary
+                    metrics = result['metrics']
+                    click.echo(click.style(f"\n✓ Benchmark completed!", fg='green'))
+                    click.echo(f"  ID: {result['id']}")
+                    click.echo(f"  Duration: {metrics['avg_duration_seconds']}s")
+                    click.echo(f"  Success Rate: {metrics['success_rate']}%")
+                except Exception as e:
+                    click.echo(click.style(f"✗ Benchmark failed for {t} on {d}: {e}", fg='red'))
+        
+        # Save results
+        if results:
+            runner.save_results()
+            click.echo(click.style(f"\n✓ Results saved to: {runner.results_dir}", fg='green'))
+            click.echo(f"  Use 'benchmark report' to generate a detailed report")
+            
+    except Exception as e:
+        click.echo(click.style(f"✗ Benchmark failed: {e}", fg='red'))
+        raise click.Abort()
+
+
+@benchmark.command('compare')
+@click.argument('baseline_id')
+@click.argument('comparison_id')
+@click.option('--results-dir', help='Directory for benchmark results')
+def benchmark_compare(baseline_id, comparison_id, results_dir):
+    """Compare two benchmark results."""
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from benchmark import BenchmarkRunner
+        
+        runner = BenchmarkRunner(results_dir=results_dir)
+        runner.load_results()
+        
+        comparison = runner.compare_results(baseline_id, comparison_id)
+        
+        # Display comparison
+        click.echo(click.style(f"\n{'='*70}", fg='cyan'))
+        click.echo(click.style("Benchmark Comparison", bold=True, fg='cyan'))
+        click.echo(click.style(f"{'='*70}", fg='cyan'))
+        click.echo(f"\nBaseline: {baseline_id}")
+        click.echo(f"  Device: {comparison['baseline_device']}")
+        click.echo(f"  Duration: {comparison['baseline_duration']}s")
+        click.echo(f"\nComparison: {comparison_id}")
+        click.echo(f"  Device: {comparison['comparison_device']}")
+        click.echo(f"  Duration: {comparison['comparison_duration']}s")
+        
+        # Color-code speedup
+        speedup = comparison['speedup']
+        if speedup > 1.5:
+            speedup_color = 'green'
+        elif speedup > 1.0:
+            speedup_color = 'yellow'
+        else:
+            speedup_color = 'red'
+        
+        click.echo(f"\n{click.style('Results:', bold=True)}")
+        click.echo(f"  Speedup: {click.style(f'{speedup}x', fg=speedup_color)}")
+        click.echo(f"  Time Saved: {comparison['time_saved_seconds']}s")
+        click.echo(f"  Performance Change: {comparison['percent_change']:+.2f}%")
+        click.echo(f"{'='*70}\n")
+        
+    except Exception as e:
+        click.echo(click.style(f"✗ Comparison failed: {e}", fg='red'))
+        raise click.Abort()
+
+
+@benchmark.command('report')
+@click.option('--results-dir', help='Directory for benchmark results')
+@click.option('--output', help='Output file for report')
+def benchmark_report(results_dir, output):
+    """Generate a benchmark report."""
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from benchmark import BenchmarkRunner
+        
+        runner = BenchmarkRunner(results_dir=results_dir)
+        runner.load_results()
+        
+        if not runner.results:
+            click.echo(click.style("✗ No benchmark results found.", fg='red'))
+            click.echo("  Run benchmarks first: benchmark run --tool all")
+            raise click.Abort()
+        
+        output_file = output or str(runner.results_dir / "BENCHMARK_REPORT.md")
+        report = runner.generate_report(output_file=output_file)
+        
+        click.echo(click.style(f"✓ Report generated: {output_file}", fg='green'))
+        click.echo(f"\nReport summary:")
+        click.echo(f"  Total benchmarks: {len(runner.results)}")
+        
+        # Count by tool
+        by_tool = {}
+        for result in runner.results:
+            tool = result['tool']
+            by_tool[tool] = by_tool.get(tool, 0) + 1
+        
+        click.echo(f"  Tools tested: {', '.join(by_tool.keys())}")
+        for tool, count in by_tool.items():
+            click.echo(f"    - {tool}: {count} benchmarks")
+        
+    except Exception as e:
+        click.echo(click.style(f"✗ Report generation failed: {e}", fg='red'))
+        raise click.Abort()
+
+
+@benchmark.command('list')
+@click.option('--results-dir', help='Directory for benchmark results')
+def benchmark_list(results_dir):
+    """List all benchmark results."""
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from benchmark import BenchmarkRunner
+        
+        runner = BenchmarkRunner(results_dir=results_dir)
+        results = runner.load_results()
+        
+        if not results:
+            click.echo(click.style("No benchmark results found.", fg='yellow'))
+            click.echo("  Run benchmarks first: benchmark run --tool fenicsx")
+            return
+        
+        click.echo(click.style(f"\n{'='*70}", fg='cyan'))
+        click.echo(click.style(f"Benchmark Results ({len(results)} total)", bold=True, fg='cyan'))
+        click.echo(click.style(f"{'='*70}\n", fg='cyan'))
+        
+        for result in results:
+            metrics = result['metrics']
+            click.echo(f"ID: {result['id']}")
+            click.echo(f"  Tool: {result['tool']}")
+            click.echo(f"  Device: {result['device']}")
+            click.echo(f"  Duration: {metrics['avg_duration_seconds']}s")
+            click.echo(f"  Success Rate: {metrics['success_rate']}%")
+            click.echo()
+        
+    except Exception as e:
+        click.echo(click.style(f"✗ Failed to list benchmarks: {e}", fg='red'))
+        raise click.Abort()
+
+
 if __name__ == '__main__':
     cli()
