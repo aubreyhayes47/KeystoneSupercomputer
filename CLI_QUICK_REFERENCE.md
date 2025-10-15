@@ -51,6 +51,18 @@ python3 cli.py submit-workflow <file.json> [--parallel|--sequential] [--wait] [-
 python3 cli.py workflow-status <task-id-1> <task-id-2> ...
 ```
 
+### Job Monitoring & History
+```bash
+# View job history
+python3 cli.py job-history [-l limit] [--tool <tool>] [--status <status>]
+
+# Show statistics
+python3 cli.py job-stats
+
+# Get job details
+python3 cli.py job-details <task-id>
+```
+
 ### LLM Agent
 ```bash
 # Ask agent
@@ -89,6 +101,18 @@ python3 cli.py submit-workflow workflow.json --parallel --wait
 ### Sequential Workflow
 ```bash
 python3 cli.py submit-workflow workflow.json --sequential --wait
+```
+
+### View Job History
+```bash
+# Show recent jobs with resource usage
+python3 cli.py job-history
+
+# Show failed jobs
+python3 cli.py job-history --status failed --limit 5
+
+# View statistics
+python3 cli.py job-stats
 ```
 
 ---
@@ -141,6 +165,7 @@ python3 cli.py submit-workflow workflow.json --sequential --wait
 ## Documentation
 
 - **CLI_REFERENCE.md** - Complete CLI documentation
+- **JOB_MONITORING.md** - Job monitoring and resource tracking guide
 - **TASK_PIPELINE.md** - Python API reference
 - **DOCKER_COMPOSE.md** - Service orchestration guide
 - **example_workflow.json** - Sample workflow file

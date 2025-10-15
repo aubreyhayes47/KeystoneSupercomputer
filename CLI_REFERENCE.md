@@ -333,6 +333,141 @@ Individual Task Status:
   task-id-3...: RUNNING (Ready: False)
 ```
 
+### `job-history`
+
+Display job execution history with resource usage and outcomes.
+
+**Usage:**
+```bash
+python3 cli.py job-history [OPTIONS]
+```
+
+**Options:**
+- `--limit, -l INTEGER`: Number of jobs to show (default: 10)
+- `--tool, -t TEXT`: Filter by tool name (fenicsx, lammps, openfoam)
+- `--status, -s TEXT`: Filter by status (success, failed, timeout, error)
+
+**Examples:**
+```bash
+# Show last 10 jobs
+python3 cli.py job-history
+
+# Show last 20 jobs
+python3 cli.py job-history --limit 20
+
+# Show only failed fenicsx jobs
+python3 cli.py job-history --tool fenicsx --status failed
+```
+
+**Example Output:**
+```
+Job History (showing 3 jobs):
+
+1. Task: 3f8a21b2c4d5...
+   Tool: fenicsx, Script: poisson.py
+   Status: SUCCESS
+   Started: 2025-10-15T10:30:00.000000
+   Duration: 330.12s
+   CPU Time: 297.79s (user: 285.45s, system: 12.34s)
+   Memory Peak: 2048.56 MB
+
+2. Task: 7b9e3f1a8c2d...
+   Tool: lammps, Script: example.lammps
+   Status: FAILED
+   Started: 2025-10-15T10:25:00.000000
+   Duration: 45.67s
+   CPU Time: 42.33s (user: 40.12s, system: 2.21s)
+   Memory Peak: 512.34 MB
+   Error: Simulation failed with non-zero exit code...
+```
+
+### `job-stats`
+
+Display aggregate statistics for all jobs.
+
+**Usage:**
+```bash
+python3 cli.py job-stats
+```
+
+**Example Output:**
+```
+Job Statistics Summary:
+
+Overall:
+  Total Jobs: 15
+  Successful: 12 (80.0%)
+  Failed: 3
+  Success Rate: 80.0%
+
+Resource Usage:
+  Total CPU Time: 4523.45s
+  Total Duration: 5234.67s
+  Average Duration: 348.98s
+
+By Tool:
+  fenicsx:
+    Jobs: 8
+    Successful: 7 (87.5%)
+    Failed: 1
+    Total Duration: 2876.34s
+  lammps:
+    Jobs: 4
+    Successful: 3 (75.0%)
+    Failed: 1
+    Total Duration: 1456.78s
+  openfoam:
+    Jobs: 3
+    Successful: 2 (66.67%)
+    Failed: 1
+    Total Duration: 901.55s
+```
+
+### `job-details`
+
+Show detailed information for a specific job including resource usage and parameters.
+
+**Usage:**
+```bash
+python3 cli.py job-details <TASK_ID>
+```
+
+**Arguments:**
+- `TASK_ID`: Task identifier to query
+
+**Example:**
+```bash
+python3 cli.py job-details 3f8a21b2c4d5e6f7a8b9c0d1e2f3a4b5
+```
+
+**Example Output:**
+```
+Job Details: 3f8a21b2c4d5e6f7a8b9c0d1e2f3a4b5
+
+Basic Information:
+  Tool: fenicsx
+  Script: poisson.py
+  Status: SUCCESS
+  Return Code: 0
+
+Timing:
+  Started: 2025-10-15T10:30:00.000000
+  Ended: 2025-10-15T10:35:30.123456
+  Duration: 330.12s
+
+Parameters:
+  {
+    "mesh_size": 64,
+    "iterations": 1000
+  }
+
+Resource Usage:
+  CPU User Time: 285.45s
+  CPU System Time: 12.34s
+  CPU Total Time: 297.79s
+  Memory Peak: 2048.56 MB
+```
+
 ### `ask`
 
 Send a message to the LLM agent for conversational interaction.

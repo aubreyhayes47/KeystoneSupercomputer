@@ -11,3 +11,6 @@ redis==4.6.0
 langchain-core==0.3.29
 langchain-ollama==0.2.0
 click==8.1.7
+
+# Resource monitoring
+psutil==5.9.6

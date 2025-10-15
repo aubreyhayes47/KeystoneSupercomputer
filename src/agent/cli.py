@@ -1,11 +1,18 @@
 import click
 import json
 import time
+import sys
 from typing import Optional
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from agent_state import AgentState
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 from task_pipeline import TaskPipeline
+from job_monitor import get_monitor
 
 llm = ChatOllama(
     model="llama3:8b",  # Change to the model you have pulled in Ollama
@@ -363,6 +370,198 @@ def workflow_status(task_ids):
             
     except Exception as e:
         click.echo(click.style(f"✗ Failed to get workflow status: {e}", fg='red'))
+        raise click.Abort()
+
+@cli.command(name='job-history')
+@click.option('--limit', '-l', type=int, default=10, help='Number of jobs to show (default: 10)')
+@click.option('--tool', '-t', help='Filter by tool name')
+@click.option('--status', '-s', help='Filter by status (success, failed, timeout, error)')
+def job_history(limit, tool, status):
+    """Display job execution history with resource usage.
+    
+    Examples:
+        cli.py job-history
+        cli.py job-history --limit 20
+        cli.py job-history --tool fenicsx
+        cli.py job-history --status failed
+    """
+    monitor = get_monitor()
+    
+    try:
+        jobs = monitor.get_job_history(limit=None)  # Get all, filter manually
+        
+        # Apply filters
+        if tool:
+            jobs = [j for j in jobs if j['tool'] == tool]
+        if status:
+            jobs = [j for j in jobs if j['status'] == status]
+        
+        # Apply limit after filtering
+        jobs = jobs[:limit]
+        
+        if not jobs:
+            click.echo(click.style("No job history found", fg='yellow'))
+            return
+        
+        click.echo(click.style(f"\nJob History (showing {len(jobs)} jobs):", fg='blue', bold=True))
+        click.echo()
+        
+        for i, job in enumerate(jobs, 1):
+            # Status with color
+            status_str = job['status']
+            if status_str == 'success':
+                status_color = 'green'
+            elif status_str in ['failed', 'error']:
+                status_color = 'red'
+            elif status_str == 'timeout':
+                status_color = 'yellow'
+            else:
+                status_color = 'blue'
+            
+            status_display = click.style(status_str.upper(), fg=status_color, bold=True)
+            
+            # Truncate task ID
+            short_id = job['task_id'][:12] + '...' if len(job['task_id']) > 15 else job['task_id']
+            
+            click.echo(f"{click.style(f'{i}.', bold=True)} Task: {short_id}")
+            click.echo(f"   Tool: {job['tool']}, Script: {job['script']}")
+            click.echo(f"   Status: {status_display}")
+            click.echo(f"   Started: {job['start_time']}")
+            click.echo(f"   Duration: {job['duration_seconds']}s")
+            
+            resource = job.get('resource_usage', {})
+            if resource:
+                click.echo(f"   CPU Time: {resource.get('cpu_total_seconds', 0)}s " +
+                          f"(user: {resource.get('cpu_user_seconds', 0)}s, " +
+                          f"system: {resource.get('cpu_system_seconds', 0)}s)")
+                click.echo(f"   Memory Peak: {resource.get('memory_peak_mb', 0)} MB")
+            
+            if job.get('error'):
+                click.echo(f"   {click.style('Error:', fg='red')} {job['error'][:100]}...")
+            
+            click.echo()
+            
+    except Exception as e:
+        click.echo(click.style(f"✗ Failed to get job history: {e}", fg='red'))
+        raise click.Abort()
+
+@cli.command(name='job-stats')
+def job_stats():
+    """Display aggregate statistics for all jobs.
+    
+    Example:
+        cli.py job-stats
+    """
+    monitor = get_monitor()
+    
+    try:
+        stats = monitor.get_summary_statistics()
+        
+        if stats['total_jobs'] == 0:
+            click.echo(click.style("No jobs recorded yet", fg='yellow'))
+            return
+        
+        click.echo(click.style("\nJob Statistics Summary:", fg='blue', bold=True))
+        click.echo()
+        
+        # Overall stats
+        click.echo(click.style("Overall:", bold=True))
+        click.echo(f"  Total Jobs: {stats['total_jobs']}")
+        click.echo(f"  Successful: {click.style(str(stats['successful']), fg='green')} " +
+                  f"({stats['success_rate']}%)")
+        click.echo(f"  Failed: {click.style(str(stats['failed']), fg='red')}")
+        click.echo(f"  Success Rate: {stats['success_rate']}%")
+        click.echo()
+        
+        # Resource usage
+        click.echo(click.style("Resource Usage:", bold=True))
+        click.echo(f"  Total CPU Time: {stats['total_cpu_time_seconds']}s")
+        click.echo(f"  Total Duration: {stats['total_duration_seconds']}s")
+        click.echo(f"  Average Duration: {stats['average_duration_seconds']}s")
+        click.echo()
+        
+        # By tool
+        if stats['by_tool']:
+            click.echo(click.style("By Tool:", bold=True))
+            for tool_name, tool_stats in stats['by_tool'].items():
+                success_rate = round(tool_stats['successful'] / tool_stats['count'] * 100, 2) if tool_stats['count'] > 0 else 0
+                click.echo(f"  {click.style(tool_name, fg='cyan')}:")
+                click.echo(f"    Jobs: {tool_stats['count']}")
+                click.echo(f"    Successful: {click.style(str(tool_stats['successful']), fg='green')} ({success_rate}%)")
+                click.echo(f"    Failed: {click.style(str(tool_stats['failed']), fg='red')}")
+                click.echo(f"    Total Duration: {tool_stats['total_duration']}s")
+            
+    except Exception as e:
+        click.echo(click.style(f"✗ Failed to get job statistics: {e}", fg='red'))
+        raise click.Abort()
+
+@cli.command(name='job-details')
+@click.argument('task_id')
+def job_details(task_id):
+    """Show detailed information for a specific job.
+    
+    Example:
+        cli.py job-details abc123-task-id
+    """
+    monitor = get_monitor()
+    
+    try:
+        job = monitor.get_job_stats(task_id)
+        
+        if not job:
+            click.echo(click.style(f"Job {task_id} not found in history", fg='yellow'))
+            return
+        
+        # Status with color
+        status_str = job['status']
+        if status_str == 'success':
+            status_color = 'green'
+        elif status_str in ['failed', 'error']:
+            status_color = 'red'
+        elif status_str == 'timeout':
+            status_color = 'yellow'
+        else:
+            status_color = 'blue'
+        
+        status_display = click.style(status_str.upper(), fg=status_color, bold=True)
+        
+        click.echo(click.style(f"\nJob Details: {task_id}", fg='blue', bold=True))
+        click.echo()
+        
+        click.echo(click.style("Basic Information:", bold=True))
+        click.echo(f"  Tool: {job['tool']}")
+        click.echo(f"  Script: {job['script']}")
+        click.echo(f"  Status: {status_display}")
+        click.echo(f"  Return Code: {job.get('returncode', 'N/A')}")
+        click.echo()
+        
+        click.echo(click.style("Timing:", bold=True))
+        click.echo(f"  Started: {job['start_time']}")
+        click.echo(f"  Ended: {job['end_time']}")
+        click.echo(f"  Duration: {job['duration_seconds']}s")
+        click.echo()
+        
+        if job.get('params'):
+            click.echo(click.style("Parameters:", bold=True))
+            click.echo(f"  {json.dumps(job['params'], indent=2)}")
+            click.echo()
+        
+        resource = job.get('resource_usage', {})
+        if resource:
+            click.echo(click.style("Resource Usage:", bold=True))
+            click.echo(f"  CPU User Time: {resource.get('cpu_user_seconds', 0)}s")
+            click.echo(f"  CPU System Time: {resource.get('cpu_system_seconds', 0)}s")
+            click.echo(f"  CPU Total Time: {resource.get('cpu_total_seconds', 0)}s")
+            click.echo(f"  Memory Peak: {resource.get('memory_peak_mb', 0)} MB")
+            click.echo()
+        
+        if job.get('error'):
+            click.echo(click.style("Error Details:", bold=True, fg='red'))
+            click.echo(f"  {job['error']}")
+            click.echo()
+            
+    except Exception as e:
+        click.echo(click.style(f"✗ Failed to get job details: {e}", fg='red'))
         raise click.Abort()
 
 if __name__ == '__main__':

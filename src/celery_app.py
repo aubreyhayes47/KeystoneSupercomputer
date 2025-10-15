@@ -7,7 +7,16 @@ from celery import Celery
 import os
 import subprocess
 import json
+import logging
 from typing import Dict, Any, Optional
+from job_monitor import get_monitor
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Initialize Celery app
 celery_app = Celery(
@@ -47,16 +56,25 @@ def run_simulation_task(
         params: Optional parameters for the simulation
     
     Returns:
-        Dictionary with task results including status, output, and artifacts
+        Dictionary with task results including status, output, artifacts, and resource usage
     """
     if params is None:
         params = {}
+    
+    # Get monitor and start tracking
+    monitor = get_monitor()
+    task_id = self.request.id
+    
+    logger.info(f"Starting job {task_id}: tool={tool}, script={script}, params={params}")
     
     # Update task state to RUNNING
     self.update_state(
         state='RUNNING',
         meta={'tool': tool, 'script': script, 'progress': 0}
     )
+    
+    # Start monitoring
+    monitor.start_monitoring(task_id, tool, script, params)
     
     try:
         # Build docker command
@@ -86,21 +104,49 @@ def run_simulation_task(
             meta={'tool': tool, 'script': script, 'progress': 100}
         )
         
+        # Determine status
+        status = 'success' if result.returncode == 0 else 'failed'
+        
+        # Stop monitoring and record outcome
+        job_stats = monitor.stop_monitoring(
+            task_id,
+            status=status,
+            returncode=result.returncode,
+            error=result.stderr if result.returncode != 0 else None
+        )
+        
+        # Log outcome
+        if status == 'success':
+            logger.info(f"Job {task_id} completed successfully - Duration: {job_stats.get('duration_seconds', 0)}s, "
+                       f"CPU: {job_stats.get('resource_usage', {}).get('cpu_total_seconds', 0)}s")
+        else:
+            logger.error(f"Job {task_id} failed with return code {result.returncode} - "
+                        f"Duration: {job_stats.get('duration_seconds', 0)}s")
+        
         # Prepare result
         task_result = {
-            'status': 'success' if result.returncode == 0 else 'failed',
+            'status': status,
             'tool': tool,
             'script': script,
             'params': params,
             'returncode': result.returncode,
             'stdout': result.stdout[-1000:] if len(result.stdout) > 1000 else result.stdout,
             'stderr': result.stderr[-1000:] if len(result.stderr) > 1000 else result.stderr,
-            'artifacts': []
+            'artifacts': [],
+            'resource_usage': job_stats.get('resource_usage', {}),
+            'duration_seconds': job_stats.get('duration_seconds', 0),
         }
         
         return task_result
         
     except subprocess.TimeoutExpired:
+        logger.warning(f"Job {task_id} timed out")
+        monitor.stop_monitoring(
+            task_id,
+            status='timeout',
+            returncode=-1,
+            error='Task exceeded time limit'
+        )
         return {
             'status': 'timeout',
             'tool': tool,
@@ -109,6 +155,13 @@ def run_simulation_task(
             'error': 'Task exceeded time limit'
         }
     except Exception as e:
+        logger.exception(f"Job {task_id} encountered an error: {e}")
+        monitor.stop_monitoring(
+            task_id,
+            status='error',
+            returncode=-1,
+            error=str(e)
+        )
         return {
             'status': 'error',
             'tool': tool,

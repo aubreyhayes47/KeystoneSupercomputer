@@ -103,7 +103,7 @@ Project is evolving—please check back for new documentation, examples, and sim
 
 ## CLI - Workflow Submission and Monitoring
 
-The Keystone Supercomputer CLI provides comprehensive commands for workflow submission and job monitoring. See [CLI_REFERENCE.md](CLI_REFERENCE.md) for complete documentation.
+The Keystone Supercomputer CLI provides comprehensive commands for workflow submission, job monitoring, and resource tracking. See [CLI_REFERENCE.md](CLI_REFERENCE.md) for complete documentation and [JOB_MONITORING.md](JOB_MONITORING.md) for monitoring details.
 
 ### Quick Start
 
@@ -124,6 +124,15 @@ python3 cli.py submit-workflow ../../example_workflow.json --parallel --wait
 
 # Check task status
 python3 cli.py status <task-id> --monitor
+
+# View job history with resource usage
+python3 cli.py job-history
+
+# Display aggregate job statistics
+python3 cli.py job-stats
+
+# Get detailed information for a specific job
+python3 cli.py job-details <task-id>
 ```
 
 ### Available Commands
@@ -135,7 +144,52 @@ python3 cli.py status <task-id> --monitor
 - `cancel` - Cancel a running task
 - `submit-workflow` - Submit multiple tasks as a workflow
 - `workflow-status` - Check status of workflow tasks
+- `job-history` - View job execution history with resource usage
+- `job-stats` - Display aggregate job statistics
+- `job-details` - Show detailed information for a specific job
 - `ask` - Interact with LLM agent
+
+---
+
+## Job Monitoring and Resource Tracking
+
+Keystone Supercomputer includes comprehensive monitoring for all simulation jobs with automatic tracking of:
+
+- **Resource Usage**: CPU time, memory consumption, execution duration
+- **Job Outcomes**: Success/failure status with detailed error information
+- **Job History**: Persistent storage of all job executions
+- **Statistics**: Aggregate metrics by tool and overall success rates
+
+### Monitoring Features
+
+Every job is automatically tracked with:
+- CPU time (user and system) in seconds
+- Peak memory usage in MB
+- Total execution duration
+- Job status (success, failed, timeout, error)
+- Detailed error messages for failures
+
+### Quick Examples
+
+```bash
+# View recent job history with resource usage
+python3 cli.py job-history --limit 20
+
+# Show aggregate statistics
+python3 cli.py job-stats
+
+# Get details for a specific job
+python3 cli.py job-details <task-id>
+
+# Filter by tool or status
+python3 cli.py job-history --tool fenicsx --status failed
+```
+
+### Job History Storage
+
+Job history is stored in `/tmp/keystone_jobs/jobs_history.jsonl` as newline-delimited JSON with complete resource metrics for each execution.
+
+For comprehensive documentation, see [JOB_MONITORING.md](JOB_MONITORING.md).
 
 ---
 
