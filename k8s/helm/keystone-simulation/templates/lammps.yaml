@@ -49,6 +49,13 @@ spec:
         envFrom:
         - configMapRef:
             name: lammps-config
+        {{- if .Values.lammps.env }}
+        env:
+        {{- range .Values.lammps.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        {{- end }}
         volumeMounts:
         - name: lammps-data
           mountPath: /data
@@ -59,15 +66,15 @@ spec:
         hostPath:
           path: {{ .Values.lammps.volumes.dataPath }}
           type: DirectoryOrCreate
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.lammps.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.lammps.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.lammps.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

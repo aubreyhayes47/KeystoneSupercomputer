@@ -20,6 +20,7 @@ services:
   # FEniCSx Simulation Service
   # Supports MPI for parallel execution
   # Usage: docker compose run --rm fenicsx mpirun -np 4 python3 script.py
+  # For GPU acceleration, see docker-compose.gpu.yml and GPU_ACCELERATION.md
   fenicsx:
     build:
       context: ./src/sim-toolbox/fenicsx
@@ -42,6 +43,7 @@ services:
   # Supports both OpenMP and MPI for parallel execution
   # Usage: docker compose run --rm lammps mpirun -np 4 --allow-run-as-root lmp -in input.lammps
   #    or: docker compose run --rm -e OMP_NUM_THREADS=4 lammps lmp -in input.lammps
+  # For GPU acceleration, see docker-compose.gpu.yml and GPU_ACCELERATION.md
   lammps:
     build:
       context: ./src/sim-toolbox/lammps
@@ -62,6 +64,7 @@ services:
   # Supports MPI for parallel execution
   # Usage: docker compose run --rm openfoam decomposePar && \
   #        docker compose run --rm openfoam mpirun -np 4 --allow-run-as-root simpleFoam -parallel
+  # For GPU acceleration, see docker-compose.gpu.yml and GPU_ACCELERATION.md
   openfoam:
     build:
       context: ./src/sim-toolbox/openfoam

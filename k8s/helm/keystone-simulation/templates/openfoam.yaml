@@ -51,6 +51,13 @@ spec:
         envFrom:
         - configMapRef:
             name: openfoam-config
+        {{- if .Values.openfoam.env }}
+        env:
+        {{- range .Values.openfoam.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        {{- end }}
         volumeMounts:
         - name: openfoam-data
           mountPath: /data
@@ -67,15 +74,15 @@ spec:
         hostPath:
           path: {{ .Values.openfoam.volumes.workspacePath }}
           type: Directory
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.openfoam.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.openfoam.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.openfoam.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -50,6 +50,13 @@ spec:
         envFrom:
         - configMapRef:
             name: fenicsx-config
+        {{- if .Values.fenicsx.env }}
+        env:
+        {{- range .Values.fenicsx.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        {{- end }}
         volumeMounts:
         - name: fenicsx-data
           mountPath: /data
@@ -66,15 +73,15 @@ spec:
         hostPath:
           path: {{ .Values.fenicsx.volumes.scriptsPath }}
           type: Directory
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.fenicsx.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.fenicsx.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.fenicsx.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
