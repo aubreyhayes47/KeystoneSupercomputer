@@ -4,6 +4,8 @@
 
 This Docker Compose configuration orchestrates multiple services for the Keystone Supercomputer project, enabling multi-service workflows for simulation execution, job queuing, and agentic coordination.
 
+**Note**: All container images have been optimized for size, build time, and runtime performance. See [CONTAINER_OPTIMIZATION.md](CONTAINER_OPTIMIZATION.md) for detailed information about optimization techniques.
+
 ### Architecture
 
 The orchestration includes the following services:
@@ -65,8 +67,12 @@ docker compose up -d
 
 #### Build all simulation images:
 ```bash
+# Enable BuildKit for optimized builds (recommended)
+export DOCKER_BUILDKIT=1
 docker compose build
 ```
+
+**Note**: BuildKit provides faster, more efficient builds with better caching. See [CONTAINER_OPTIMIZATION.md](CONTAINER_OPTIMIZATION.md) for details.
 
 #### Run a specific simulation service:
 ```bash
