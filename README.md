@@ -45,6 +45,7 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 - **Docker Compose:** ✔️ Multi-service orchestration with `docker-compose.yml` - see [DOCKER_COMPOSE.md](DOCKER_COMPOSE.md).
 - **Job Queue:** ✔️ Celery + Redis integration for background task processing with worker service.
 - **Local Kubernetes:** ✔️ Multi-node k3d cluster setup with `kubectl` and `helm` - see [K3D.md](K3D.md).
+- **Workflow Testing:** ✔️ Comprehensive unit and integration tests for agentic workflow orchestration - see [src/agent/TEST_WORKFLOW_ORCHESTRATION.md](src/agent/TEST_WORKFLOW_ORCHESTRATION.md).
 
 ---
 
@@ -190,6 +191,59 @@ python3 cli.py job-history --tool fenicsx --status failed
 Job history is stored in `/tmp/keystone_jobs/jobs_history.jsonl` as newline-delimited JSON with complete resource metrics for each execution.
 
 For comprehensive documentation, see [JOB_MONITORING.md](JOB_MONITORING.md).
+
+---
+
+## Testing & Quality Assurance
+
+Keystone Supercomputer includes comprehensive test suites for agentic workflow orchestration and multi-step simulation execution.
+
+### Test Coverage
+
+- **Unit Tests:** Validate workflow orchestration, task pipeline, CLI, and job monitoring components
+- **Integration Tests:** End-to-end testing of agentic workflows through Docker Compose services
+- **Orchestration Tests:** Validate multi-step workflows with sequential and parallel execution
+
+### Running Tests
+
+```bash
+# Run all unit tests
+cd src/agent
+python3 run_all_tests.py
+
+# Run specific test suites
+python3 test_workflow_orchestration.py  # Workflow orchestration
+python3 test_task_pipeline.py           # Task pipeline
+python3 test_cli.py                     # CLI commands
+python3 ../test_job_monitor.py          # Job monitoring
+
+# Run integration tests (requires Docker Compose services)
+docker compose up -d redis celery-worker
+python3 test_agentic_workflow_integration.py
+```
+
+### What's Tested
+
+✅ **Workflow Orchestration**
+- Sequential and parallel task execution
+- Multi-step workflow coordination
+- Agent state management throughout workflows
+- Error handling and recovery
+- Task cancellation and cleanup
+
+✅ **Container Orchestration**
+- Docker Compose service integration
+- Celery task queue processing
+- Redis message broker communication
+- Simulation tool execution (FEniCSx, LAMMPS, OpenFOAM)
+
+✅ **Agent Interfaces**
+- TaskPipeline API for agent-driven workflows
+- Status tracking and monitoring
+- Progress callbacks and notifications
+- Result collection and artifact management
+
+For comprehensive testing documentation, see [src/agent/TEST_WORKFLOW_ORCHESTRATION.md](src/agent/TEST_WORKFLOW_ORCHESTRATION.md).
 
 ---
 
