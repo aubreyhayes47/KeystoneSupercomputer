@@ -1,0 +1,28 @@
+apiVersion: v2
+name: keystone-simulation
+description: Helm chart for Keystone Supercomputer simulation stack including Redis, Celery workers, and simulation tools (FEniCSx, LAMMPS, OpenFOAM)
+
+type: application
+
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 1.0.0
+
+# This is the version number of the application being deployed.
+appVersion: "1.0.0"
+
+keywords:
+  - simulation
+  - scientific-computing
+  - fenicsx
+  - lammps
+  - openfoam
+  - celery
+  - redis
+
+maintainers:
+  - name: Keystone Supercomputer Team
+
+sources:
+  - https://github.com/aubreyhayes47/KeystoneSupercomputer

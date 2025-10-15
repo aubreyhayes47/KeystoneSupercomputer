@@ -23,3 +23,6 @@ integration_test_report.md
 
 # Docker Compose override
 docker-compose.override.yml
+
+# Helm chart packages
+*.tgz

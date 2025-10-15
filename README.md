@@ -239,3 +239,63 @@ kubectl get pods -n keystone
 
 See [K3D.md](K3D.md) for comprehensive cluster management, troubleshooting, and advanced usage.
 
+---
+
+## Helm Charts for Kubernetes Deployment
+
+Keystone Supercomputer provides Helm charts for simplified, production-ready Kubernetes deployments. See [HELM_QUICKSTART.md](HELM_QUICKSTART.md) and [k8s/helm/README.md](k8s/helm/README.md) for comprehensive documentation.
+
+### Quick Start
+
+```bash
+# Install complete simulation stack
+helm install keystone-sim k8s/helm/keystone-simulation \
+  -n keystone \
+  --create-namespace
+
+# Install with custom configuration
+helm install keystone-sim k8s/helm/keystone-simulation \
+  -n keystone \
+  --create-namespace \
+  -f k8s/helm/values-production.yaml
+
+# Check deployment
+kubectl get all -n keystone
+
+# Run a simulation
+kubectl create job -n keystone fenicsx-run-1 \
+  --from=job/fenicsx-simulation
+```
+
+### Available Configurations
+
+- **`values-dev.yaml`** - Development environment with minimal resources
+- **`values-production.yaml`** - Production setup with high availability
+- **`values-minimal.yaml`** - Minimal deployment for testing
+- **`values-hpc.yaml`** - High-performance computing configuration
+
+### Chart Components
+
+The Helm chart deploys:
+- Redis message broker with persistent storage
+- Scalable Celery workers
+- Job templates for FEniCSx, LAMMPS, and OpenFOAM simulations
+- ConfigMaps for environment configuration
+- Proper resource limits and health checks
+
+### Upgrading
+
+```bash
+# Scale workers
+helm upgrade keystone-sim k8s/helm/keystone-simulation \
+  -n keystone \
+  --set celeryWorker.replicaCount=10
+
+# Update resources
+helm upgrade keystone-sim k8s/helm/keystone-simulation \
+  -n keystone \
+  -f custom-values.yaml
+```
+
+See [k8s/helm/README.md](k8s/helm/README.md) for detailed configuration options, examples, and best practices.
+

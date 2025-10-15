@@ -1,0 +1,78 @@
+{{- if .Values.fenicsx.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fenicsx-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: fenicsx
+    app.kubernetes.io/name: fenicsx
+    app.kubernetes.io/component: simulation
+    app.kubernetes.io/part-of: keystone-simulation
+    helm.sh/chart: {{ include "keystone-simulation.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  PYTHONUNBUFFERED: "1"
+  SIMULATION_TYPE: {{ .Values.fenicsx.config.simulationType | quote }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fenicsx-simulation
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: fenicsx
+    app.kubernetes.io/name: fenicsx
+    app.kubernetes.io/component: simulation
+    app.kubernetes.io/part-of: keystone-simulation
+    helm.sh/chart: {{ include "keystone-simulation.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  # Don't automatically create - this is a template for on-demand jobs
+  suspend: {{ .Values.fenicsx.jobTemplate.suspend }}
+  template:
+    metadata:
+      labels:
+        app: fenicsx
+        app.kubernetes.io/name: fenicsx
+        app.kubernetes.io/component: simulation
+        app.kubernetes.io/part-of: keystone-simulation
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: fenicsx
+        image: "{{ .Values.fenicsx.image.repository }}:{{ .Values.fenicsx.image.tag }}"
+        imagePullPolicy: {{ .Values.fenicsx.image.pullPolicy }}
+        envFrom:
+        - configMapRef:
+            name: fenicsx-config
+        volumeMounts:
+        - name: fenicsx-data
+          mountPath: /data
+        - name: fenicsx-scripts
+          mountPath: /app
+        resources:
+          {{- toYaml .Values.fenicsx.resources | nindent 10 }}
+      volumes:
+      - name: fenicsx-data
+        hostPath:
+          path: {{ .Values.fenicsx.volumes.dataPath }}
+          type: DirectoryOrCreate
+      - name: fenicsx-scripts
+        hostPath:
+          path: {{ .Values.fenicsx.volumes.scriptsPath }}
+          type: Directory
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
