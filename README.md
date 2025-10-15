@@ -97,9 +97,38 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 
 ## Getting Started
 
-Clone the repo and see the latest phase’s instructions or open an issue for help.  
-Project is evolving—please check back for new documentation, examples, and simulation tool adapters.
+For a comprehensive guide to launching, monitoring, and managing orchestrated simulation workflows, see **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)**.
 
+### Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/aubreyhayes47/KeystoneSupercomputer.git
+cd KeystoneSupercomputer
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Start orchestration services
+./docker-compose-quickstart.sh
+
+# 4. Submit your first simulation
+cd src/agent
+python3 cli.py submit fenicsx poisson.py --wait
+```
+
+### Documentation Quick Links
+
+- **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
+- **[CLI_REFERENCE.md](CLI_REFERENCE.md)** - CLI command reference
+- **[TASK_PIPELINE.md](TASK_PIPELINE.md)** - Python API documentation
+- **[DOCKER_COMPOSE.md](DOCKER_COMPOSE.md)** - Docker Compose setup
+- **[K3D.md](K3D.md)** - Kubernetes cluster setup
+- **[HELM_QUICKSTART.md](HELM_QUICKSTART.md)** - Helm deployment guide
+- **[JOB_MONITORING.md](JOB_MONITORING.md)** - Monitoring and metrics
+
+Clone the repo and see the latest phase's instructions or open an issue for help.  
+Project is evolving—please check back for new documentation, examples, and simulation tool adapters.
 ---
 
 ## CLI - Workflow Submission and Monitoring
