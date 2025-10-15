@@ -28,13 +28,18 @@ import subprocess
 import json
 import os
 import re
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import tempfile
 import shutil
 
+# Add parent directory to path for orchestration_base import
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from orchestration_base import OrchestrationBase, SimulationStatus
 
-class OpenFOAMAdapter:
+
+class OpenFOAMAdapter(OrchestrationBase):
     """Adapter for running OpenFOAM simulations in Docker containers."""
     
     def __init__(
@@ -53,7 +58,9 @@ class OpenFOAMAdapter:
             input_dir: Optional directory for input files
             work_dir: Optional working directory (default: temporary directory)
         """
-        self.image_name = image_name
+        # Initialize orchestration base
+        super().__init__(image_name, output_dir)
+        
         self.output_dir = Path(output_dir).resolve()
         self.input_dir = Path(input_dir).resolve() if input_dir else None
         self.work_dir = Path(work_dir) if work_dir else None
@@ -93,6 +100,9 @@ class OpenFOAMAdapter:
         """
         use_temp_dir = self.work_dir is None
         work_dir = self.work_dir or Path(tempfile.mkdtemp())
+        
+        # Update status to running
+        self._update_status(SimulationStatus.RUNNING)
         
         try:
             # Prepare the case script
@@ -178,13 +188,16 @@ class OpenFOAMAdapter:
             
             self.last_result = simulation_result
             
+            # Update status based on result
             if result.returncode == 0:
+                self._update_status(SimulationStatus.COMPLETED)
                 print("✓ Simulation completed successfully!")
                 print(f"✓ Output files: {len(output_files)}")
                 print(f"✓ Results saved to: {self.output_dir}")
                 if solver_data.get('timesteps_completed'):
                     print(f"✓ Timesteps completed: {solver_data['timesteps_completed']}")
             else:
+                self._update_status(SimulationStatus.FAILED)
                 print("✗ Simulation failed!")
                 print(f"Error: {result.stderr}")
             
@@ -446,6 +459,46 @@ class OpenFOAMAdapter:
         except Exception as e:
             print(f"Error building image: {e}")
             return False
+    
+    def _get_capabilities(self) -> list:
+        """
+        Return list of capabilities supported by OpenFOAM adapter.
+        
+        Returns:
+            List of capability strings
+        """
+        return [
+            "cfd_simulation",
+            "mesh_generation",
+            "incompressible_flow",
+            "compressible_flow",
+            "multiphase_flow",
+            "turbulence_modeling",
+            "heat_transfer",
+            "custom_solvers",
+            "post_processing"
+        ]
+    
+    def _get_version(self) -> Optional[str]:
+        """
+        Get OpenFOAM version from Docker image.
+        
+        Returns:
+            Version string if available, None otherwise
+        """
+        try:
+            result = subprocess.run(
+                ["docker", "run", "--rm", self.image_name, 
+                 "/bin/bash", "-c", "echo $WM_PROJECT_VERSION"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip()
+        except Exception:
+            pass
+        return None
 
 
 def main():
