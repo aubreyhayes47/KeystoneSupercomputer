@@ -74,7 +74,8 @@ def run_simulation_task(
     )
     
     # Start monitoring
-    monitor.start_monitoring(task_id, tool, script, params)
+    container_name = f"keystone-{tool}"
+    monitor.start_monitoring(task_id, tool, script, params, container_name=container_name)
     
     try:
         # Build docker command

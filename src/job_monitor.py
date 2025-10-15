@@ -20,6 +20,7 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 from pathlib import Path
 import threading
+from resource_profiler import ResourceProfiler
 
 
 class JobMonitor:
@@ -40,20 +41,24 @@ class JobMonitor:
         >>> stats = monitor.get_job_stats("task-123")
     """
     
-    def __init__(self, log_dir: Optional[str] = None):
+    def __init__(self, log_dir: Optional[str] = None, enable_profiling: bool = True):
         """
         Initialize the job monitor.
         
         Args:
             log_dir: Directory to store job logs (default: /tmp/keystone_jobs)
+            enable_profiling: Enable detailed resource profiling (default: True)
         """
         self.log_dir = Path(log_dir) if log_dir else Path("/tmp/keystone_jobs")
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.jobs_file = self.log_dir / "jobs_history.jsonl"
         self._monitoring = {}
         self._lock = threading.Lock()
+        self.enable_profiling = enable_profiling
+        self._profilers = {}
     
-    def start_monitoring(self, task_id: str, tool: str, script: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def start_monitoring(self, task_id: str, tool: str, script: str, params: Dict[str, Any], 
+                        container_name: Optional[str] = None) -> Dict[str, Any]:
         """
         Start monitoring a job.
         
@@ -62,6 +67,7 @@ class JobMonitor:
             tool: Simulation tool name
             script: Script being executed
             params: Job parameters
+            container_name: Optional Docker container name for container-level monitoring
             
         Returns:
             Job metadata dictionary
@@ -79,6 +85,13 @@ class JobMonitor:
             'initial_memory': process.memory_info()._asdict(),
             'process_id': process.pid,
         }
+        
+        # Start resource profiling if enabled
+        if self.enable_profiling:
+            profiler = ResourceProfiler()
+            profiler.start_profiling(container_name)
+            with self._lock:
+                self._profilers[task_id] = profiler
         
         with self._lock:
             self._monitoring[task_id] = job_info
@@ -111,6 +124,7 @@ class JobMonitor:
                 return {}
             
             job_info = self._monitoring.pop(task_id)
+            profiler = self._profilers.pop(task_id, None)
         
         end_time = time.time()
         duration = end_time - job_info['start_time']
@@ -147,6 +161,11 @@ class JobMonitor:
             'error': error,
             'has_result': result is not None,
         }
+        
+        # Add detailed profiling data if available
+        if profiler:
+            profile = profiler.stop_profiling()
+            job_stats['detailed_profile'] = profile
         
         # Log to file
         self._write_job_log(job_stats)
