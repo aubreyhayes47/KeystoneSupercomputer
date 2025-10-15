@@ -51,11 +51,12 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 ---
 
 
-### **Phase 5: Performance Optimization** ⏳ **(In Progress)**
+### **Phase 5: Performance Optimization** ✔️ **(Completed)**
 - **Hardware Acceleration:** GPU/NPU access in containers - see [GPU_ACCELERATION.md](GPU_ACCELERATION.md).
 - **Performance Benchmarking:** ✔️ Standardized benchmarks for CPU vs GPU/NPU performance comparison - see [BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md).
 - **Container Optimization:** ✔️ Optimized container images for size, build time, and runtime performance - see [CONTAINER_OPTIMIZATION.md](CONTAINER_OPTIMIZATION.md).
 - **Resource Profiling:** ✔️ Comprehensive resource profiling for CPU, memory, GPU, I/O during simulations - see [RESOURCE_PROFILING.md](RESOURCE_PROFILING.md).
+- **Performance Tuning Guide:** ✔️ Comprehensive end-user guide for maximizing simulation performance - see [PERFORMANCE_TUNING_GUIDE.md](PERFORMANCE_TUNING_GUIDE.md).
 - **Parallelism:** OpenMP/MPI configuration.
 
 ---
@@ -125,7 +126,8 @@ python3 cli.py submit fenicsx poisson.py --wait
 ### Documentation Quick Links
 
 - **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
-- **[PARALLEL_ORCHESTRATION.md](PARALLEL_ORCHESTRATION.md)** - Parallel agent orchestration patterns (NEW!)
+- **[PERFORMANCE_TUNING_GUIDE.md](PERFORMANCE_TUNING_GUIDE.md)** - Comprehensive performance optimization guide (NEW!)
+- **[PARALLEL_ORCHESTRATION.md](PARALLEL_ORCHESTRATION.md)** - Parallel agent orchestration patterns
 - **[PARALLEL_SIMULATIONS.md](PARALLEL_SIMULATIONS.md)** - OpenMP and MPI parallel computing guide
 - **[PARALLEL_EXAMPLES.md](PARALLEL_EXAMPLES.md)** - Quick parallel execution examples
 - **[GPU_ACCELERATION.md](GPU_ACCELERATION.md)** - GPU/NPU hardware acceleration setup
