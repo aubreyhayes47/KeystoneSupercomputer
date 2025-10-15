@@ -11,6 +11,9 @@ Features:
 - Retrieve task results
 - Cancel running tasks
 - Submit and manage multi-task workflows
+- Parallel execution across multiple nodes/cores
+- Batch processing and parameter sweeps
+- Resource-aware scheduling
 - Comprehensive error handling
 """
 
@@ -19,6 +22,7 @@ import sys
 from typing import Dict, Any, Optional, List, Callable, Union
 from datetime import datetime
 from pathlib import Path
+import multiprocessing
 
 # Add parent directory to path for celery_app import
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -26,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from celery_app import run_simulation_task, health_check_task, list_simulations_task
 from celery.result import AsyncResult
 from celery_app import celery_app
+from parallel_executor import ParallelExecutor, BatchProcessor
 
 
 class TaskStatus:
@@ -396,6 +401,194 @@ class TaskPipeline:
                 raise TimeoutError(f"Workflow did not complete within {timeout} seconds")
             
             time.sleep(poll_interval)
+    
+    def submit_batch_workflow(
+        self,
+        tasks: List[Dict[str, Any]],
+        batch_size: Optional[int] = None,
+        callback: Optional[Callable[[Dict[str, Any]], None]] = None
+    ) -> List[str]:
+        """
+        Submit a batch of tasks with automatic batching and parallel submission.
+        
+        This method submits tasks in batches to avoid overwhelming the queue
+        while still achieving high parallelism.
+        
+        Args:
+            tasks: List of task dictionaries with 'tool', 'script', 'params'
+            batch_size: Number of tasks to submit at once (default: CPU count)
+            callback: Optional callback for batch progress updates
+            
+        Returns:
+            List of all task IDs
+            
+        Example:
+            >>> tasks = [{"tool": "fenicsx", "script": "poisson.py", "params": {"mesh_size": i}}
+            ...          for i in [16, 32, 64, 128]]
+            >>> task_ids = pipeline.submit_batch_workflow(tasks, batch_size=2)
+        """
+        if batch_size is None:
+            batch_size = multiprocessing.cpu_count()
+        
+        all_task_ids = []
+        total_tasks = len(tasks)
+        
+        # Submit in batches
+        for i in range(0, total_tasks, batch_size):
+            batch = tasks[i:i+batch_size]
+            batch_num = i // batch_size + 1
+            
+            # Submit batch tasks in parallel
+            batch_task_ids = []
+            for task_config in batch:
+                tool = task_config.get('tool')
+                script = task_config.get('script')
+                params = task_config.get('params', {})
+                
+                if not tool or not script:
+                    raise ValueError("Each task must have 'tool' and 'script' fields")
+                
+                task_id = self.submit_task(tool, script, params)
+                batch_task_ids.append(task_id)
+            
+            all_task_ids.extend(batch_task_ids)
+            
+            if callback:
+                callback({
+                    'batch_num': batch_num,
+                    'batch_size': len(batch),
+                    'submitted': len(all_task_ids),
+                    'total': total_tasks,
+                    'task_ids': batch_task_ids
+                })
+        
+        return all_task_ids
+    
+    def parameter_sweep(
+        self,
+        tool: str,
+        script: str,
+        param_grid: Dict[str, List[Any]],
+        callback: Optional[Callable[[Dict[str, Any]], None]] = None
+    ) -> List[str]:
+        """
+        Submit a parameter sweep workflow - run simulation with all combinations of parameters.
+        
+        Args:
+            tool: Simulation tool name
+            script: Script filename
+            param_grid: Dictionary mapping parameter names to lists of values
+            callback: Optional callback for progress updates
+            
+        Returns:
+            List of task IDs for all parameter combinations
+            
+        Example:
+            >>> param_grid = {
+            ...     'mesh_size': [16, 32, 64],
+            ...     'time_steps': [100, 200]
+            ... }
+            >>> task_ids = pipeline.parameter_sweep('fenicsx', 'poisson.py', param_grid)
+            >>> # This submits 6 tasks (3 mesh_sizes × 2 time_steps)
+        """
+        # Generate all parameter combinations
+        processor = BatchProcessor()
+        param_combinations = processor._generate_combinations(param_grid)
+        
+        # Create task list
+        tasks = []
+        for params in param_combinations:
+            tasks.append({
+                'tool': tool,
+                'script': script,
+                'params': params
+            })
+        
+        # Submit all tasks
+        return self.submit_batch_workflow(tasks, callback=callback)
+    
+    def wait_for_any(
+        self,
+        task_ids: List[str],
+        timeout: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Wait for any task in the list to complete.
+        
+        Args:
+            task_ids: List of task IDs to wait for
+            timeout: Maximum time to wait in seconds
+            
+        Returns:
+            Dictionary with completed task information
+            
+        Example:
+            >>> task_ids = pipeline.submit_workflow(tasks, sequential=False)
+            >>> first_complete = pipeline.wait_for_any(task_ids, timeout=60)
+            >>> print(f"First task completed: {first_complete['task_id']}")
+        """
+        start_time = time.time()
+        
+        while True:
+            for task_id in task_ids:
+                status = self.get_task_status(task_id)
+                if status['ready']:
+                    return {
+                        'task_id': task_id,
+                        'status': status
+                    }
+            
+            if timeout and (time.time() - start_time) > timeout:
+                raise TimeoutError(f"No task completed within {timeout} seconds")
+            
+            time.sleep(1)
+    
+    def get_parallel_execution_stats(self, task_ids: List[str]) -> Dict[str, Any]:
+        """
+        Get statistics about parallel execution of tasks.
+        
+        Args:
+            task_ids: List of task IDs to analyze
+            
+        Returns:
+            Dictionary with execution statistics
+            
+        Example:
+            >>> stats = pipeline.get_parallel_execution_stats(task_ids)
+            >>> print(f"Average duration: {stats['avg_duration']}s")
+            >>> print(f"Parallel speedup: {stats['speedup']}x")
+        """
+        statuses = [self.get_task_status(task_id) for task_id in task_ids]
+        
+        completed = [s for s in statuses if s['ready'] and s['successful']]
+        failed = [s for s in statuses if s['ready'] and not s['successful']]
+        
+        durations = []
+        for status in completed:
+            result = status.get('result', {})
+            duration = result.get('duration_seconds', 0)
+            if duration > 0:
+                durations.append(duration)
+        
+        total_duration = sum(durations) if durations else 0
+        avg_duration = total_duration / len(durations) if durations else 0
+        
+        # Estimate speedup (total sequential time / max parallel time)
+        max_duration = max(durations) if durations else 0
+        speedup = total_duration / max_duration if max_duration > 0 else 1.0
+        
+        return {
+            'total_tasks': len(task_ids),
+            'completed': len(completed),
+            'failed': len(failed),
+            'running': len([s for s in statuses if s['state'] == TaskStatus.RUNNING]),
+            'pending': len([s for s in statuses if s['state'] == TaskStatus.PENDING]),
+            'total_duration': total_duration,
+            'avg_duration': avg_duration,
+            'max_duration': max_duration,
+            'speedup': speedup,
+            'efficiency': (speedup / len(task_ids)) if len(task_ids) > 0 else 0
+        }
     
     def cleanup(self):
         """

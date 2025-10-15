@@ -11,6 +11,10 @@ The Task Pipeline module (`task_pipeline.py`) provides a high-level Python inter
 - **Result Retrieval**: Retrieve task results with timeout support
 - **Task Cancellation**: Cancel running or pending tasks
 - **Workflow Management**: Submit and manage multi-task workflows (sequential or parallel)
+- **Batch Workflows**: Efficiently submit large numbers of tasks with automatic batching
+- **Parameter Sweeps**: Automatically generate and run parameter combinations
+- **Parallel Execution Stats**: Track speedup, efficiency, and resource utilization
+- **Wait-for-Any**: React to first completed task in a set
 - **Comprehensive Error Handling**: Graceful handling of timeouts, failures, and errors
 - **Agent-Friendly**: Designed for easy integration with LangGraph agents
 
@@ -398,6 +402,9 @@ Run the unit tests:
 ```bash
 cd src/agent
 python3 test_task_pipeline.py
+python3 test_workflow_orchestration.py
+python3 test_enhanced_pipeline.py  # New parallel orchestration tests
+python3 test_parallel_executor.py  # Parallel executor tests
 ```
 
 The tests validate:
@@ -406,6 +413,138 @@ The tests validate:
 - TaskStatus constants
 - Cleanup functionality
 - Workflow validation
+- Batch workflow submission
+- Parameter sweep generation
+- Parallel execution statistics
+- Wait-for-any semantics
+
+---
+
+## Parallel Orchestration Methods (NEW)
+
+The TaskPipeline now includes enhanced parallel orchestration capabilities.
+
+### `submit_batch_workflow(tasks, batch_size=None, callback=None) -> List[str]`
+
+Submit multiple tasks efficiently with automatic batching.
+
+**Parameters:**
+- `tasks` - List of task dictionaries with 'tool', 'script', 'params'
+- `batch_size` - Optional batch size (default: CPU count)
+- `callback` - Optional callback function for batch progress
+
+**Returns:** List of task IDs
+
+**Example:**
+
+```python
+tasks = [
+    {"tool": "fenicsx", "script": "poisson.py", "params": {"mesh_size": i}}
+    for i in range(16, 116)
+]
+
+def on_batch(info):
+    print(f"Batch {info['batch_num']}: {info['submitted']}/{info['total']}")
+
+task_ids = pipeline.submit_batch_workflow(tasks, batch_size=10, callback=on_batch)
+```
+
+### `parameter_sweep(tool, script, param_grid, callback=None) -> List[str]`
+
+Submit a parameter sweep workflow - automatically generates all parameter combinations.
+
+**Parameters:**
+- `tool` - Simulation tool name
+- `script` - Script filename
+- `param_grid` - Dictionary mapping parameter names to value lists
+- `callback` - Optional callback for progress updates
+
+**Returns:** List of task IDs for all combinations
+
+**Example:**
+
+```python
+param_grid = {
+    'mesh_size': [16, 32, 64, 128],
+    'time_steps': [100, 200, 500]
+}
+
+# Submits 4 × 3 = 12 tasks
+task_ids = pipeline.parameter_sweep(
+    tool='fenicsx',
+    script='poisson.py',
+    param_grid=param_grid
+)
+
+results = pipeline.wait_for_workflow(task_ids)
+```
+
+### `wait_for_any(task_ids, timeout=None) -> Dict[str, Any]`
+
+Wait for any task in the list to complete (race condition).
+
+**Parameters:**
+- `task_ids` - List of task IDs to monitor
+- `timeout` - Optional timeout in seconds
+
+**Returns:** Dictionary with 'task_id' and 'status' of first completed task
+
+**Example:**
+
+```python
+# Submit competing tasks
+task_ids = pipeline.submit_workflow(tasks, sequential=False)
+
+# Wait for first completion
+first_result = pipeline.wait_for_any(task_ids, timeout=300)
+print(f"Winner: {first_result['task_id']}")
+
+# Optionally cancel remaining
+for tid in task_ids:
+    if tid != first_result['task_id']:
+        pipeline.cancel_task(tid)
+```
+
+### `get_parallel_execution_stats(task_ids) -> Dict[str, Any]`
+
+Calculate parallel execution statistics including speedup and efficiency.
+
+**Parameters:**
+- `task_ids` - List of task IDs to analyze
+
+**Returns:** Dictionary with execution statistics:
+- `total_tasks` - Total number of tasks
+- `completed` - Successfully completed tasks
+- `failed` - Failed tasks
+- `running` - Currently running tasks
+- `pending` - Pending tasks
+- `total_duration` - Sum of all task durations
+- `avg_duration` - Average task duration
+- `max_duration` - Maximum task duration
+- `speedup` - Parallel speedup factor (total_duration / max_duration)
+- `efficiency` - Parallel efficiency (speedup / total_tasks)
+
+**Example:**
+
+```python
+# After workflow completes
+stats = pipeline.get_parallel_execution_stats(task_ids)
+
+print(f"Speedup: {stats['speedup']:.2f}x")
+print(f"Efficiency: {stats['efficiency']:.2%}")
+print(f"Average duration: {stats['avg_duration']:.2f}s")
+```
+
+---
+
+## Related Documentation
+
+- **[PARALLEL_ORCHESTRATION.md](PARALLEL_ORCHESTRATION.md)** - Comprehensive parallel orchestration guide
+- **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - General orchestration patterns
+- **[CLI_REFERENCE.md](CLI_REFERENCE.md)** - Command-line interface
+- **[CELERY_QUICK_REFERENCE.md](CELERY_QUICK_REFERENCE.md)** - Direct Celery usage
+
+---
 
 ## Requirements
 

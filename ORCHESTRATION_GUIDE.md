@@ -465,6 +465,59 @@ if pipeline.cancel_task(task_id):
 
 ---
 
+## Parallel Agent Orchestration
+
+Keystone Supercomputer now includes **enhanced parallel orchestration** capabilities for multi-core and multi-node task execution:
+
+### Batch Workflow Submission
+
+Submit large numbers of tasks efficiently with automatic batching:
+
+```python
+# Submit 100 tasks in optimal batches
+tasks = [
+    {"tool": "fenicsx", "script": "poisson.py", "params": {"mesh_size": i}}
+    for i in range(16, 116)
+]
+
+task_ids = pipeline.submit_batch_workflow(tasks)
+```
+
+### Parameter Sweep Workflows
+
+Automatically generate and run all parameter combinations:
+
+```python
+# Define parameter grid
+param_grid = {
+    'mesh_size': [16, 32, 64, 128],
+    'time_steps': [100, 200, 500]
+}
+
+# Submit all 12 combinations (4 × 3)
+task_ids = pipeline.parameter_sweep(
+    tool='fenicsx',
+    script='poisson.py',
+    param_grid=param_grid
+)
+
+# Analyze parallel execution
+stats = pipeline.get_parallel_execution_stats(task_ids)
+print(f"Speedup: {stats['speedup']:.2f}x")
+print(f"Efficiency: {stats['efficiency']:.2%}")
+```
+
+### Advanced Scheduling Patterns
+
+- **Wait-for-any**: React to first completed task
+- **Dynamic load balancing**: Maintain optimal worker utilization
+- **Adaptive sweeps**: Refine parameters based on initial results
+- **Hierarchical workflows**: Multi-stage dependent pipelines
+
+**See: [PARALLEL_ORCHESTRATION.md](PARALLEL_ORCHESTRATION.md)** for comprehensive guide
+
+---
+
 ## Common Workflow Patterns
 
 ### Pattern 1: Single Simulation
