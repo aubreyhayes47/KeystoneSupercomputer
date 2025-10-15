@@ -49,8 +49,8 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 
 ---
 
-### **Phase 5: Performance Optimization** 🔜 **(Upcoming)**
-- **Hardware Acceleration:** GPU/NPU access in containers.
+### **Phase 5: Performance Optimization** ⏳ **(In Progress)**
+- **Hardware Acceleration:** GPU/NPU access in containers - see [GPU_ACCELERATION.md](GPU_ACCELERATION.md).
 - **Parallelism:** OpenMP/MPI configuration.
 
 ---
@@ -120,6 +120,7 @@ python3 cli.py submit fenicsx poisson.py --wait
 ### Documentation Quick Links
 
 - **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
+- **[GPU_ACCELERATION.md](GPU_ACCELERATION.md)** - GPU/NPU hardware acceleration setup
 - **[CLI_REFERENCE.md](CLI_REFERENCE.md)** - CLI command reference
 - **[TASK_PIPELINE.md](TASK_PIPELINE.md)** - Python API documentation
 - **[DOCKER_COMPOSE.md](DOCKER_COMPOSE.md)** - Docker Compose setup
@@ -435,4 +436,39 @@ helm upgrade keystone-sim k8s/helm/keystone-simulation \
 ```
 
 See [k8s/helm/README.md](k8s/helm/README.md) for detailed configuration options, examples, and best practices.
+
+---
+
+## GPU/NPU Hardware Acceleration
+
+Keystone Supercomputer supports GPU and NPU acceleration for computationally intensive simulations. See [GPU_ACCELERATION.md](GPU_ACCELERATION.md) for comprehensive setup instructions.
+
+### Supported Hardware
+
+- **NVIDIA GPUs**: CUDA-capable GPUs with Container Toolkit
+- **Intel GPUs/NPUs**: Intel Integrated/Discrete GPUs with oneAPI support
+- **AMD GPUs**: ROCm-compatible AMD GPUs
+
+### Quick Start with GPU
+
+```bash
+# Docker Compose with NVIDIA GPU
+docker compose -f docker-compose.gpu.yml --profile nvidia-gpu up -d
+docker compose -f docker-compose.gpu.yml run --rm fenicsx-nvidia poisson.py
+
+# Kubernetes with GPU support
+helm install keystone-sim k8s/helm/keystone-simulation \
+  -n keystone --create-namespace \
+  -f k8s/helm/values-gpu.yaml
+```
+
+### What's Included
+
+- Docker Compose GPU configurations ([docker-compose.gpu.yml](docker-compose.gpu.yml))
+- Kubernetes GPU values file ([k8s/helm/values-gpu.yaml](k8s/helm/values-gpu.yaml))
+- Detailed setup instructions for NVIDIA, Intel, and AMD hardware
+- Device plugin installation guides
+- GPU resource management and troubleshooting
+
+For complete documentation, see [GPU_ACCELERATION.md](GPU_ACCELERATION.md).
 
