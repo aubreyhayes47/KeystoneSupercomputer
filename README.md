@@ -51,6 +51,7 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 
 ### **Phase 5: Performance Optimization** ⏳ **(In Progress)**
 - **Hardware Acceleration:** GPU/NPU access in containers - see [GPU_ACCELERATION.md](GPU_ACCELERATION.md).
+- **Performance Benchmarking:** ✔️ Standardized benchmarks for CPU vs GPU/NPU performance comparison - see [BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md).
 - **Parallelism:** OpenMP/MPI configuration.
 
 ---
@@ -121,6 +122,7 @@ python3 cli.py submit fenicsx poisson.py --wait
 
 - **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
 - **[GPU_ACCELERATION.md](GPU_ACCELERATION.md)** - GPU/NPU hardware acceleration setup
+- **[BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md)** - Performance benchmarking and comparison
 - **[CLI_REFERENCE.md](CLI_REFERENCE.md)** - CLI command reference
 - **[TASK_PIPELINE.md](TASK_PIPELINE.md)** - Python API documentation
 - **[DOCKER_COMPOSE.md](DOCKER_COMPOSE.md)** - Docker Compose setup
@@ -471,4 +473,71 @@ helm install keystone-sim k8s/helm/keystone-simulation \
 - GPU resource management and troubleshooting
 
 For complete documentation, see [GPU_ACCELERATION.md](GPU_ACCELERATION.md).
+
+---
+
+## Performance Benchmarking
+
+Keystone Supercomputer includes a comprehensive benchmarking system for measuring and comparing simulation performance across CPU, GPU, and NPU configurations. See [BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md) for complete documentation.
+
+### Features
+
+- **Standardized Benchmarks**: Pre-configured benchmarks for FEniCSx, LAMMPS, and OpenFOAM
+- **Multi-Device Support**: Test performance on CPU, NVIDIA GPU, and Intel GPU/NPU
+- **Performance Metrics**: Track execution time, CPU usage, memory consumption, and GPU utilization
+- **Result Comparison**: Compare performance across different hardware configurations
+- **Reproducibility**: Store detailed system information and benchmark parameters
+
+### Quick Start
+
+```bash
+# Run CPU benchmark
+cd src
+python3 benchmark.py --tool fenicsx --device cpu --runs 3
+
+# Run GPU benchmark
+python3 benchmark.py --tool fenicsx --device gpu --runs 3
+
+# Compare CPU vs GPU
+python3 benchmark.py --compare <cpu-benchmark-id> <gpu-benchmark-id>
+
+# Generate report
+python3 benchmark.py --report
+```
+
+### Python API
+
+```python
+from benchmark import BenchmarkRunner
+
+# Create runner
+runner = BenchmarkRunner()
+
+# Run benchmarks
+cpu_result = runner.run_benchmark("fenicsx", device="cpu", runs=3)
+gpu_result = runner.run_benchmark("fenicsx", device="gpu", runs=3)
+
+# Compare results
+comparison = runner.compare_results(cpu_result['id'], gpu_result['id'])
+print(f"Speedup: {comparison['speedup']}x")
+
+# Generate report
+runner.generate_report(output_file="BENCHMARK_REPORT.md")
+```
+
+### Benchmark Results
+
+Benchmarks record comprehensive performance metrics:
+- **Execution Time**: Average, min, max, and standard deviation across runs
+- **CPU Usage**: User and system CPU time consumed
+- **Memory Usage**: Average and peak memory consumption
+- **System Info**: Hardware specifications for reproducibility
+- **Success Rate**: Percentage of successful benchmark runs
+
+Results are stored in `/tmp/keystone_benchmarks/` and include:
+- Line-delimited JSON log of all benchmarks
+- Summary JSON file with aggregate results
+- Markdown report for easy sharing
+
+For comprehensive documentation and examples, see [BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md).
 
