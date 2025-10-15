@@ -61,9 +61,12 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 
 ---
 
-### **Phase 6: Multi-Agent System** 🔜 **(Upcoming)**
-- **Agent Architecture:** LangGraph conductor-performer graphs.
-- **Specialized Agents:** For requirements, planning, simulation, visualization, and validation.
+### **Phase 6: Multi-Agent System** ✔️ **(Completed)**
+- **Agent Architecture:** ✔️ LangGraph conductor-performer graphs implemented - see [CONDUCTOR_PERFORMER_ARCHITECTURE.md](CONDUCTOR_PERFORMER_ARCHITECTURE.md).
+- **Specialized Agents:** ✔️ Conductor, Performer (FEniCSx, LAMMPS, OpenFOAM), and Validator agents.
+- **Workflow Orchestration:** ✔️ Task planning, delegation, error handling, and feedback loops.
+- **Example Workflows:** ✔️ Structural analysis, multi-physics, parameter sweeps, and error recovery.
+- **Testing:** ✔️ Comprehensive test suite with 37 tests covering all agent behaviors.
 
 ---
 
@@ -125,8 +128,9 @@ python3 cli.py submit fenicsx poisson.py --wait
 
 ### Documentation Quick Links
 
+- **[CONDUCTOR_PERFORMER_ARCHITECTURE.md](CONDUCTOR_PERFORMER_ARCHITECTURE.md)** - Multi-agent system architecture (NEW!)
 - **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
-- **[PERFORMANCE_TUNING_GUIDE.md](PERFORMANCE_TUNING_GUIDE.md)** - Comprehensive performance optimization guide (NEW!)
+- **[PERFORMANCE_TUNING_GUIDE.md](PERFORMANCE_TUNING_GUIDE.md)** - Comprehensive performance optimization guide
 - **[PARALLEL_ORCHESTRATION.md](PARALLEL_ORCHESTRATION.md)** - Parallel agent orchestration patterns
 - **[PARALLEL_SIMULATIONS.md](PARALLEL_SIMULATIONS.md)** - OpenMP and MPI parallel computing guide
 - **[PARALLEL_EXAMPLES.md](PARALLEL_EXAMPLES.md)** - Quick parallel execution examples
@@ -236,6 +240,63 @@ python3 cli.py job-history --tool fenicsx --status failed
 Job history is stored in `/tmp/keystone_jobs/jobs_history.jsonl` as newline-delimited JSON with complete resource metrics and detailed profiling data for each execution.
 
 For comprehensive documentation, see [JOB_MONITORING.md](JOB_MONITORING.md) and [RESOURCE_PROFILING.md](RESOURCE_PROFILING.md).
+
+---
+
+## Multi-Agent System with LangGraph
+
+Keystone Supercomputer implements a sophisticated multi-agent orchestration system using the **Conductor-Performer pattern** built with LangGraph. See [CONDUCTOR_PERFORMER_ARCHITECTURE.md](CONDUCTOR_PERFORMER_ARCHITECTURE.md) for comprehensive documentation.
+
+### Architecture Overview
+
+The system features:
+- **Conductor Agent**: Central orchestrator for task planning, delegation, and error handling
+- **Performer Agents**: Specialized agents for FEniCSx, LAMMPS, and OpenFOAM simulations
+- **Validator Agent**: Quality control and feedback generation
+- **Feedback Loops**: Automatic refinement and error recovery
+
+### Quick Start
+
+```python
+from conductor_performer_graph import ConductorPerformerGraph
+
+# Initialize the graph
+graph = ConductorPerformerGraph()
+
+# Execute a workflow
+result = graph.execute_workflow(
+    user_request="Run structural analysis on steel beam"
+)
+
+print(f"Status: {result['status']}")
+print(f"Iterations: {result['iterations']}")
+```
+
+### Example Workflows
+
+The system includes pre-configured example workflows for:
+- **Structural Analysis**: Single-tool FEniCSx finite element analysis
+- **Multi-Physics**: Coupled structural and fluid dynamics simulations
+- **Parameter Sweeps**: Molecular dynamics with multiple configurations
+- **Error Recovery**: Automatic mesh refinement on convergence issues
+
+### Interactive Demo
+
+```bash
+cd src/agent
+python3 example_conductor_performer.py
+```
+
+### Testing
+
+Comprehensive test suite with 37 tests covering all agent behaviors:
+
+```bash
+cd src/agent
+python3 test_conductor_performer_graph.py
+```
+
+For detailed architecture documentation, agent responsibilities, edge routing logic, and example workflows, see [CONDUCTOR_PERFORMER_ARCHITECTURE.md](CONDUCTOR_PERFORMER_ARCHITECTURE.md).
 
 ---
 
