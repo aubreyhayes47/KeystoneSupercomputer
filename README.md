@@ -46,6 +46,7 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 - **Job Queue:** ✔️ Celery + Redis integration for background task processing with worker service.
 - **Local Kubernetes:** ✔️ Multi-node k3d cluster setup with `kubectl` and `helm` - see [K3D.md](K3D.md).
 - **Workflow Testing:** ✔️ Comprehensive unit and integration tests for agentic workflow orchestration - see [src/agent/TEST_WORKFLOW_ORCHESTRATION.md](src/agent/TEST_WORKFLOW_ORCHESTRATION.md).
+- **Parallel Orchestration:** ✔️ Batch workflow submission, parameter sweeps, and multi-core scheduling - see [PARALLEL_ORCHESTRATION.md](PARALLEL_ORCHESTRATION.md).
 
 ---
 
@@ -124,6 +125,7 @@ python3 cli.py submit fenicsx poisson.py --wait
 ### Documentation Quick Links
 
 - **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
+- **[PARALLEL_ORCHESTRATION.md](PARALLEL_ORCHESTRATION.md)** - Parallel agent orchestration patterns (NEW!)
 - **[PARALLEL_SIMULATIONS.md](PARALLEL_SIMULATIONS.md)** - OpenMP and MPI parallel computing guide
 - **[PARALLEL_EXAMPLES.md](PARALLEL_EXAMPLES.md)** - Quick parallel execution examples
 - **[GPU_ACCELERATION.md](GPU_ACCELERATION.md)** - GPU/NPU hardware acceleration setup
