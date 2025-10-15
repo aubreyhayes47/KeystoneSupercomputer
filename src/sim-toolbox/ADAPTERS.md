@@ -13,6 +13,9 @@ Each simulation toolbox (FEniCSx, LAMMPS, OpenFOAM) has a corresponding Python a
 - **Parses output** - Extracts results, metadata, and performance metrics
 - **Reports results** - Provides structured JSON output for downstream tools
 - **Enables LLM integration** - Ready for MCP-based tool calling and agentic workflows
+- **Supports orchestration** - Health checks, status reporting, and standardized interfaces for robust workflow management
+
+**NEW:** All adapters now support orchestration features for production deployments. See [ORCHESTRATION.md](./ORCHESTRATION.md) for details.
 
 ## Available Adapters
 
@@ -182,7 +185,14 @@ adapter.get_last_result() -> Dict[str, Any]
 
 # Save result to JSON
 adapter.save_result_json(filepath="simulation_result.json")
+
+# NEW: Orchestration APIs
+adapter.health_check() -> Dict[str, Any]      # Comprehensive health check
+adapter.get_status() -> Dict[str, Any]        # Current adapter status
+adapter.get_metadata() -> Dict[str, Any]      # Tool capabilities and metadata
 ```
+
+See [ORCHESTRATION.md](./ORCHESTRATION.md) for detailed orchestration API documentation.
 
 ## Example Usage Scripts
 
@@ -387,6 +397,7 @@ python3 validate_adapters.py
 
 ## Related Documentation
 
+- [Orchestration Features](./ORCHESTRATION.md) - **NEW** - Health checks, status reporting, and orchestration APIs
 - [Integration Test Documentation](./INTEGRATION_TEST.md)
 - [FEniCSx README](./fenicsx/README.md)
 - [LAMMPS README](./lammps/README.md)

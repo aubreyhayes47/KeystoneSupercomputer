@@ -138,6 +138,28 @@ class IntegrationTest:
             
             print("✓ Docker image available\n")
             
+            # Test orchestration features
+            print("Testing orchestration features...")
+            
+            # Health check
+            print("  - Running health check...")
+            health = adapter.health_check()
+            print(f"    Status: {health['status']}")
+            print(f"    Checks passed: {sum(1 for v in health['checks'].values() if v)}/{len(health['checks'])}")
+            
+            # Status reporting
+            print("  - Getting status...")
+            status = adapter.get_status()
+            print(f"    State: {status['state']}")
+            
+            # Metadata API
+            print("  - Getting metadata...")
+            metadata = adapter.get_metadata()
+            print(f"    Tool: {metadata['tool_name']}")
+            print(f"    Capabilities: {len(metadata['capabilities'])} features")
+            
+            print("✓ Orchestration features validated\n")
+            
             # Run simulation with default Poisson script
             print("Running Poisson equation simulation...")
             script_path = Path(__file__).parent / "fenicsx" / "poisson.py"
@@ -220,6 +242,28 @@ class IntegrationTest:
                 return result
             
             print("✓ Docker image available\n")
+            
+            # Test orchestration features
+            print("Testing orchestration features...")
+            
+            # Health check
+            print("  - Running health check...")
+            health = adapter.health_check()
+            print(f"    Status: {health['status']}")
+            print(f"    Checks passed: {sum(1 for v in health['checks'].values() if v)}/{len(health['checks'])}")
+            
+            # Status reporting
+            print("  - Getting status...")
+            status = adapter.get_status()
+            print(f"    State: {status['state']}")
+            
+            # Metadata API
+            print("  - Getting metadata...")
+            metadata = adapter.get_metadata()
+            print(f"    Tool: {metadata['tool_name']}")
+            print(f"    Capabilities: {len(metadata['capabilities'])} features")
+            
+            print("✓ Orchestration features validated\n")
             
             # Run simulation with example LAMMPS script
             print("Running Lennard-Jones fluid simulation...")
@@ -313,6 +357,28 @@ class IntegrationTest:
                 return result
             
             print("✓ Docker image available\n")
+            
+            # Test orchestration features
+            print("Testing orchestration features...")
+            
+            # Health check
+            print("  - Running health check...")
+            health = adapter.health_check()
+            print(f"    Status: {health['status']}")
+            print(f"    Checks passed: {sum(1 for v in health['checks'].values() if v)}/{len(health['checks'])}")
+            
+            # Status reporting
+            print("  - Getting status...")
+            status = adapter.get_status()
+            print(f"    State: {status['state']}")
+            
+            # Metadata API
+            print("  - Getting metadata...")
+            metadata = adapter.get_metadata()
+            print(f"    Tool: {metadata['tool_name']}")
+            print(f"    Capabilities: {len(metadata['capabilities'])} features")
+            
+            print("✓ Orchestration features validated\n")
             
             # Run simulation with cavity flow example
             print("Running cavity flow simulation...")
