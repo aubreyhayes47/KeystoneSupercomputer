@@ -15,6 +15,9 @@ metadata:
 data:
   PYTHONUNBUFFERED: "1"
   SIMULATION_TYPE: {{ .Values.fenicsx.config.simulationType | quote }}
+  OMP_NUM_THREADS: {{ .Values.fenicsx.config.ompNumThreads | default "1" | quote }}
+  OMP_PROC_BIND: {{ .Values.fenicsx.config.ompProcBind | default "spread" | quote }}
+  OMP_PLACES: {{ .Values.fenicsx.config.ompPlaces | default "threads" | quote }}
 ---
 apiVersion: batch/v1
 kind: Job

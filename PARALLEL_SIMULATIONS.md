@@ -31,11 +31,24 @@ All simulation containers include OpenMP and MPI support out of the box. To run 
 docker compose run --rm lammps mpirun -np 4 --allow-run-as-root lmp -in input.lammps
 
 # Docker Compose: Run with OpenMP (4 threads)
-docker compose run --rm -e OMP_NUM_THREADS=4 lammps lmp -sf omp -in input.lammps
+docker compose run --rm -e OMP_NUM_THREADS=4 lammps lmp -in input.lammps
 
 # Docker Compose: Hybrid MPI + OpenMP
 docker compose run --rm -e OMP_NUM_THREADS=2 lammps \
-  mpirun -np 4 --allow-run-as-root lmp -sf omp -in input.lammps
+  mpirun -np 4 --allow-run-as-root lmp -in input.lammps
+```
+
+**Quick Test**: Verify parallel support is working:
+
+```bash
+# Test LAMMPS
+docker compose run --rm lammps bash /app/test_parallel.sh
+
+# Test FEniCSx
+docker compose run --rm --entrypoint="" fenicsx mpirun -np 4 python3 /app/test_parallel.py
+
+# Test OpenFOAM
+docker compose run --rm openfoam bash /workspace/test_parallel.sh
 ```
 
 ---
