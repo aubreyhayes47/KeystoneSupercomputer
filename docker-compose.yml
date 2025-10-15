@@ -25,6 +25,8 @@ services:
     build:
       context: ./src/sim-toolbox/fenicsx
       dockerfile: Dockerfile
+      cache_from:
+        - fenicsx-toolbox:latest
     image: fenicsx-toolbox:latest
     container_name: keystone-fenicsx
     volumes:
@@ -48,6 +50,8 @@ services:
     build:
       context: ./src/sim-toolbox/lammps
       dockerfile: Dockerfile
+      cache_from:
+        - keystone/lammps:latest
     image: keystone/lammps:latest
     container_name: keystone-lammps
     volumes:
@@ -69,6 +73,8 @@ services:
     build:
       context: ./src/sim-toolbox/openfoam
       dockerfile: Dockerfile
+      cache_from:
+        - openfoam-toolbox:latest
     image: openfoam-toolbox:latest
     container_name: keystone-openfoam
     volumes:
@@ -89,6 +95,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.celery
+      cache_from:
+        - keystone-celery-worker:latest
     image: keystone-celery-worker:latest
     container_name: keystone-celery-worker
     depends_on:
