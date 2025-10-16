@@ -128,7 +128,9 @@ python3 cli.py submit fenicsx poisson.py --wait
 
 ### Documentation Quick Links
 
-- **[SIMULATION_WORKFLOW_AGENTS.md](SIMULATION_WORKFLOW_AGENTS.md)** - Specialized agents for simulation workflow stages (NEW!)
+- **[WORKFLOW_ROUTING_GUIDE.md](WORKFLOW_ROUTING_GUIDE.md)** - LangGraph routing logic and conditional edges (NEW!)
+- **[WORKFLOW_ROUTING_QUICK_REFERENCE.md](WORKFLOW_ROUTING_QUICK_REFERENCE.md)** - Quick reference for routing patterns (NEW!)
+- **[SIMULATION_WORKFLOW_AGENTS.md](SIMULATION_WORKFLOW_AGENTS.md)** - Specialized agents for simulation workflow stages
 - **[CONDUCTOR_PERFORMER_ARCHITECTURE.md](CONDUCTOR_PERFORMER_ARCHITECTURE.md)** - Multi-agent system architecture
 - **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
 - **[PERFORMANCE_TUNING_GUIDE.md](PERFORMANCE_TUNING_GUIDE.md)** - Comprehensive performance optimization guide
@@ -357,6 +359,119 @@ python3 test_conductor_performer_graph.py
 ```
 
 For detailed architecture documentation, agent responsibilities, edge routing logic, and example workflows, see [CONDUCTOR_PERFORMER_ARCHITECTURE.md](CONDUCTOR_PERFORMER_ARCHITECTURE.md).
+
+---
+
+## Workflow Routing and Conditional Edges
+
+Keystone Supercomputer includes comprehensive **routing logic and conditional edges** for intelligent workflow execution in LangGraph. This enables adaptive, fault-tolerant, and context-aware workflow orchestration. See [WORKFLOW_ROUTING_GUIDE.md](WORKFLOW_ROUTING_GUIDE.md) for comprehensive documentation.
+
+### Routing Strategies
+
+**8 Built-in Routing Strategies:**
+
+1. ✅ **Success Path** - Normal workflow progression
+2. ✅ **Error Fallback** - Graceful degradation with severity levels
+3. ✅ **Retry with Backoff** - Exponential backoff for transient failures
+4. ✅ **Conditional Branch** - Output value and context-based routing
+5. ✅ **Resource-Aware** - Adaptive paths based on CPU/memory/GPU availability
+6. ✅ **Performance-Based** - Learn from historical metrics to optimize routing
+7. ✅ **Parallel Execution** - Fan-out/fan-in patterns with join nodes
+8. ✅ **Circuit Breaker** - Fault tolerance for external dependencies
+
+### Quick Start
+
+```python
+from workflow_routing import WorkflowRouter, WorkflowRoutingState, NodeStatus
+
+# Initialize router
+router = WorkflowRouter(max_retries=3)
+
+# Make routing decision
+state: WorkflowRoutingState = {
+    "node_status": {"simulation": NodeStatus.COMPLETED},
+    "node_results": {"simulation": {"output": "success"}},
+    "retry_count": 0
+}
+
+decision = router.route_after_execution(
+    state=state,
+    current_node="simulation",
+    success_node="validation",
+    error_node="error_handler"
+)
+
+print(f"Route to: {decision.next_node}")  # "validation"
+```
+
+### Key Features
+
+**Decision-Making Based On:**
+- Agent outputs and execution results
+- Error states with severity classification (LOW, MEDIUM, HIGH, CRITICAL)
+- Workflow context (priority, user preferences, environment)
+- Resource availability (CPU, memory, GPU)
+- Historical performance metrics
+- Circuit breaker state for fault tolerance
+
+**Advanced Patterns:**
+- Multi-way branching with complex conditions
+- Validation with refinement loops
+- Dynamic workflow composition
+- Priority-based execution (critical, high, normal, low)
+- Adaptive solver selection
+
+### Example: Priority-Based Routing
+
+```python
+# High-priority requests get GPU acceleration
+state: WorkflowRoutingState = {
+    "workflow_context": {"priority": "high"}
+}
+
+routing_rules = [
+    {
+        "condition": lambda p: p == "high",
+        "node": "gpu_accelerated_path",
+        "reason": "High priority - GPU acceleration"
+    },
+    {
+        "condition": lambda p: p == "normal",
+        "node": "standard_cpu_path",
+        "reason": "Standard processing"
+    }
+]
+
+decision = router.route_by_context(
+    state=state,
+    context_key="priority",
+    routing_rules=routing_rules,
+    default_node="standard_path"
+)
+```
+
+### Interactive Examples
+
+```bash
+cd src/agent
+
+# Run 10 routing strategy examples
+python3 example_routing_strategies.py
+
+# Enhanced conductor-performer with routing
+python3 example_enhanced_routing.py
+
+# Run routing tests (35 tests)
+python3 test_workflow_routing.py
+```
+
+### Documentation
+
+- **[WORKFLOW_ROUTING_GUIDE.md](WORKFLOW_ROUTING_GUIDE.md)** - Comprehensive guide with patterns and examples
+- **[WORKFLOW_ROUTING_QUICK_REFERENCE.md](WORKFLOW_ROUTING_QUICK_REFERENCE.md)** - Quick reference cheat sheet
+- **[src/agent/workflow_routing.py](src/agent/workflow_routing.py)** - Core implementation
+- **[src/agent/example_routing_strategies.py](src/agent/example_routing_strategies.py)** - 10 interactive examples
+- **[src/agent/test_workflow_routing.py](src/agent/test_workflow_routing.py)** - Comprehensive test suite
 
 ---
 
