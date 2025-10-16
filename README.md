@@ -128,7 +128,8 @@ python3 cli.py submit fenicsx poisson.py --wait
 
 ### Documentation Quick Links
 
-- **[CONDUCTOR_PERFORMER_ARCHITECTURE.md](CONDUCTOR_PERFORMER_ARCHITECTURE.md)** - Multi-agent system architecture (NEW!)
+- **[SIMULATION_WORKFLOW_AGENTS.md](SIMULATION_WORKFLOW_AGENTS.md)** - Specialized agents for simulation workflow stages (NEW!)
+- **[CONDUCTOR_PERFORMER_ARCHITECTURE.md](CONDUCTOR_PERFORMER_ARCHITECTURE.md)** - Multi-agent system architecture
 - **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
 - **[PERFORMANCE_TUNING_GUIDE.md](PERFORMANCE_TUNING_GUIDE.md)** - Comprehensive performance optimization guide
 - **[PARALLEL_ORCHESTRATION.md](PARALLEL_ORCHESTRATION.md)** - Parallel agent orchestration patterns
@@ -255,7 +256,66 @@ The system features:
 - **Validator Agent**: Quality control and feedback generation
 - **Feedback Loops**: Automatic refinement and error recovery
 
-### Quick Start
+### Simulation Workflow Agents
+
+In addition to the Conductor-Performer pattern, Keystone includes specialized agents for managing complete simulation workflows. See [SIMULATION_WORKFLOW_AGENTS.md](SIMULATION_WORKFLOW_AGENTS.md) for detailed specifications.
+
+**Six Specialized Agents:**
+
+1. **RequirementAnalysisAgent** - Analyze and validate simulation requirements
+2. **PlanningAgent** - Create detailed execution plans and resource allocation
+3. **SimulationAgent** - Execute simulations and manage compute resources
+4. **VisualizationAgent** - Generate visualizations from results
+5. **ValidationAgent** - Validate results against success criteria
+6. **SummarizationAgent** - Generate comprehensive reports and summaries
+
+**Key Features:**
+- Standardized input/output protocols with `AgentInput` and `AgentOutput`
+- Clear separation of concerns with single-responsibility agents
+- Comprehensive error handling and validation
+- Support for refinement loops and iterative improvement
+- Full integration with LangGraph for state management
+
+**Quick Example:**
+
+```python
+from simulation_workflow_agents import (
+    RequirementAnalysisAgent,
+    PlanningAgent,
+    SimulationAgent,
+    VisualizationAgent,
+    ValidationAgent,
+    SummarizationAgent,
+    AgentInput,
+    WorkflowStage
+)
+
+# 1. Analyze Requirements
+req_agent = RequirementAnalysisAgent()
+req_output = req_agent.process(AgentInput(
+    stage=WorkflowStage.REQUIREMENT_ANALYSIS,
+    data={"user_request": "Run FEA on steel beam under 10kN load"}
+))
+
+# 2. Create Plan
+plan_agent = PlanningAgent()
+plan_output = plan_agent.process(AgentInput(
+    stage=WorkflowStage.PLANNING,
+    previous_stage_output=req_output.data
+))
+
+# 3-6: Execute remaining workflow stages...
+# See SIMULATION_WORKFLOW_AGENTS.md for complete examples
+```
+
+**Interactive Demo:**
+
+```bash
+cd src/agent
+python3 example_simulation_workflow_agents.py
+```
+
+### Conductor-Performer Quick Start
 
 ```python
 from conductor_performer_graph import ConductorPerformerGraph
