@@ -9,8 +9,10 @@ import subprocess
 import json
 import logging
 from typing import Dict, Any, Optional
+from pathlib import Path
 from job_monitor import get_monitor
 from provenance_logger import get_provenance_logger
+from validation_integration import get_validation_integration
 
 # Setup logging
 logging.basicConfig(
@@ -160,6 +162,45 @@ def run_simulation_task(
             'resource_usage': job_stats.get('resource_usage', {}),
             'duration_seconds': job_stats.get('duration_seconds', 0),
         }
+        
+        # Perform post-run validation if simulation succeeded
+        validation_result = None
+        if status == 'success':
+            try:
+                # Determine output directory (default to /tmp/keystone_output/<task_id>)
+                output_dir = Path(f"/tmp/keystone_output/{task_id}")
+                
+                # Try to find benchmark ID from params or script name
+                benchmark_id = params.get('benchmark_id')
+                if not benchmark_id:
+                    # Try to infer from script name
+                    script_base = Path(script).stem
+                    potential_id = f"{tool}-{script_base}"
+                    # Don't validate if no benchmark found - this is optional
+                
+                # Run validation
+                validator = get_validation_integration()
+                validation_result = validator.validate_task_result(
+                    task_id=task_id,
+                    tool=tool,
+                    output_dir=output_dir,
+                    benchmark_id=benchmark_id,
+                    workflow_id=workflow_id
+                )
+                
+                logger.info(f"Validation completed for task {task_id}: "
+                           f"{validation_result['checks_passed']}/{validation_result['total_checks']} checks passed")
+                
+            except Exception as e:
+                logger.warning(f"Validation failed for task {task_id}: {e}")
+                validation_result = {
+                    'validation_passed': False,
+                    'error': str(e)
+                }
+        
+        # Add validation results to task result
+        if validation_result:
+            task_result['validation'] = validation_result
         
         # Finalize provenance tracking
         provenance_file = prov_logger.finalize_workflow(
