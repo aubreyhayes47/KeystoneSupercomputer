@@ -41,6 +41,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from task_pipeline import TaskPipeline, TaskStatus
+from provenance_logger import get_provenance_logger
 
 
 class AgentRole(str, Enum):
@@ -121,6 +122,7 @@ class ConductorAgent:
         """Initialize Conductor with access to task execution pipeline."""
         self.task_pipeline = task_pipeline or TaskPipeline()
         self.role = AgentRole.CONDUCTOR
+        self.prov_logger = get_provenance_logger()
     
     def analyze_request(self, state: ConductorPerformerState) -> ConductorPerformerState:
         """
@@ -141,6 +143,9 @@ class ConductorAgent:
             "request": user_request,
             "phases": []
         }
+        
+        # Record analysis in provenance if workflow_id is available in state
+        # Note: workflow_id is managed externally in execute_workflow
         
         # Simple keyword-based task identification
         # In production, this would use LLM-based analysis
@@ -534,6 +539,27 @@ class ConductorPerformerGraph:
         Returns:
             Final workflow result with all execution details
         """
+        # Start provenance tracking for the workflow
+        prov_logger = get_provenance_logger()
+        workflow_id = prov_logger.start_workflow(
+            user_prompt=user_request,
+            workflow_plan={
+                "pattern": "conductor_performer",
+                "max_iterations": max_iterations
+            },
+            metadata={
+                "orchestration_type": "langgraph_conductor_performer"
+            }
+        )
+        
+        # Record conductor agent action
+        prov_logger.record_agent_action(
+            workflow_id=workflow_id,
+            agent_role="conductor",
+            action="workflow_started",
+            details={"user_request": user_request}
+        )
+        
         # Initialize state
         initial_state: ConductorPerformerState = {
             "messages": [HumanMessage(content=user_request)],
@@ -543,17 +569,58 @@ class ConductorPerformerGraph:
             "iteration_count": 0
         }
         
-        # Execute the graph
-        final_state = self.graph.invoke(initial_state)
-        
-        # Return the final result
-        return {
-            "status": final_state.get("status"),
-            "result": final_state.get("final_result"),
-            "messages": [msg.content if hasattr(msg, 'content') else str(msg) 
-                        for msg in final_state.get("messages", [])],
-            "iterations": final_state.get("iteration_count", 0)
-        }
+        try:
+            # Execute the graph
+            final_state = self.graph.invoke(initial_state)
+            
+            # Record final result
+            prov_logger.record_agent_action(
+                workflow_id=workflow_id,
+                agent_role="conductor",
+                action="workflow_completed",
+                details={
+                    "status": str(final_state.get("status")),
+                    "iterations": final_state.get("iteration_count", 0)
+                }
+            )
+            
+            # Prepare result
+            result = {
+                "status": final_state.get("status"),
+                "result": final_state.get("final_result"),
+                "messages": [msg.content if hasattr(msg, 'content') else str(msg) 
+                            for msg in final_state.get("messages", [])],
+                "iterations": final_state.get("iteration_count", 0)
+            }
+            
+            # Finalize provenance
+            provenance_file = prov_logger.finalize_workflow(
+                workflow_id=workflow_id,
+                status='completed',
+                final_result=result
+            )
+            
+            # Add provenance file to result
+            result['provenance_file'] = str(provenance_file)
+            
+            return result
+            
+        except Exception as e:
+            # Record error and finalize provenance
+            prov_logger.record_agent_action(
+                workflow_id=workflow_id,
+                agent_role="conductor",
+                action="workflow_error",
+                details={"error": str(e)}
+            )
+            
+            provenance_file = prov_logger.finalize_workflow(
+                workflow_id=workflow_id,
+                status='failed',
+                error=str(e)
+            )
+            
+            raise
     
     def get_graph_visualization(self) -> str:
         """
