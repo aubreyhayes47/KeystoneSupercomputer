@@ -1,0 +1,107 @@
+{
+  "id": "lammps-lennard-jones-fluid",
+  "name": "Lennard-Jones Fluid Simulation",
+  "simulator": "lammps",
+  "version": "1.0.0",
+  "description": "Classical molecular dynamics simulation of a Lennard-Jones fluid in periodic boundary conditions. The system consists of 4000 atoms in an FCC lattice arrangement at reduced density 0.8442. This benchmark tests basic LAMMPS functionality including potential evaluation, neighbor lists, and time integration using the NVE ensemble.",
+  "category": "molecular-dynamics",
+  "difficulty": "beginner",
+  "tags": ["lennard-jones", "molecular-dynamics", "nve-ensemble", "periodic-boundary"],
+  "input_files": [
+    {
+      "filename": "example.lammps",
+      "description": "LAMMPS input script for Lennard-Jones fluid",
+      "path": "../../lammps/example.lammps",
+      "checksum": "81fcb67fb734db05cbfb13a6f6987175706d6e63bf7148ebe97260ac46582f1a"
+    }
+  ],
+  "expected_results": {
+    "output_files": [
+      {
+        "filename": "trajectory.lammpstrj",
+        "description": "Atomic trajectory in LAMMPS dump format"
+      },
+      {
+        "filename": "final.data",
+        "description": "Final configuration in LAMMPS data format"
+      },
+      {
+        "filename": "log.lammps",
+        "description": "LAMMPS log file with thermodynamic data"
+      }
+    ],
+    "metrics": {
+      "final_temperature": {
+        "value": 1.44,
+        "tolerance": 0.1,
+        "unit": "reduced_units"
+      },
+      "final_pressure": {
+        "value": 5.0,
+        "tolerance": 0.5,
+        "unit": "reduced_units"
+      },
+      "total_atoms": {
+        "value": 4000,
+        "tolerance": 0,
+        "unit": "count"
+      }
+    },
+    "performance": {
+      "typical_runtime_seconds": 8,
+      "memory_mb": 128,
+      "reference_hardware": "Intel Core i7-1165G7 @ 2.80GHz, 16GB RAM"
+    }
+  },
+  "validation_criteria": {
+    "method": "tolerance_based",
+    "tolerance": 0.1,
+    "checks": [
+      {
+        "name": "trajectory_exists",
+        "type": "file_exists",
+        "parameters": {
+          "filename": "/data/output/trajectory.lammpstrj"
+        }
+      },
+      {
+        "name": "final_config_exists",
+        "type": "file_exists",
+        "parameters": {
+          "filename": "/data/output/final.data"
+        }
+      },
+      {
+        "name": "temperature_check",
+        "type": "metric_value",
+        "parameters": {
+          "metric": "final_temperature",
+          "expected": 1.44,
+          "tolerance": 0.1
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "author": "Keystone Supercomputer Team",
+    "created_date": "2025-10-20",
+    "license": "MIT",
+    "references": [
+      "LAMMPS documentation: https://docs.lammps.org",
+      "Lennard-Jones potential: https://en.wikipedia.org/wiki/Lennard-Jones_potential"
+    ]
+  },
+  "execution": {
+    "command": "lmp -in example.lammps",
+    "parameters": {
+      "timesteps": 1000
+    },
+    "timeout_seconds": 120,
+    "requires_gpu": false,
+    "parallel": {
+      "enabled": true,
+      "processes": 1,
+      "threads": 1
+    }
+  }
+}
