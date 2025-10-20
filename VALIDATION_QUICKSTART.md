@@ -130,10 +130,19 @@ Add custom checks:
 from validation_framework import ValidationFramework
 
 def custom_check(output_dir):
-    # Your validation logic
+    # Check custom convergence criterion
+    metric_file = output_dir / 'custom_metric.txt'
+    if not metric_file.exists():
+        return {'passed': False, 'details': 'Metric file missing'}
+    
+    with open(metric_file, 'r') as f:
+        value = float(f.read().strip())
+    
+    passed = 0.9 <= value <= 1.1  # Within 10% of expected
     return {
-        'passed': True,
-        'details': 'Custom check passed'
+        'passed': passed,
+        'value': value,
+        'details': f'Custom metric: {value} (expected: 0.9-1.1)'
     }
 
 validator = ValidationFramework()

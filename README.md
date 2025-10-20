@@ -129,7 +129,7 @@ python3 cli.py submit fenicsx poisson.py --wait
 
 ### Documentation Quick Links
 
-- **[VALIDATION_GUIDE.md](VALIDATION_GUIDE.md)** - Automated post-run validation framework (NEW!)
+- **[VALIDATION_GUIDE.md](VALIDATION_GUIDE.md)** - Automated post-run validation framework
 - **[PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md)** - Provenance logging schema and reproducibility guide
 - **[BENCHMARK_REGISTRY.md](BENCHMARK_REGISTRY.md)** - Reference benchmark cases for all simulators
 - **[WORKFLOW_ROUTING_GUIDE.md](WORKFLOW_ROUTING_GUIDE.md)** - LangGraph routing logic and conditional edges
