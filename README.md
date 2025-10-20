@@ -73,6 +73,7 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 ### **Phase 7: Reproducibility & Trust** ✔️ **(Completed)**
 - **Provenance Logging:** ✔️ Automated `provenance.json` for every run - see [PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md).
 - **Benchmark Registry:** ✔️ Curated reference cases with validation for all simulators - see [BENCHMARK_REGISTRY.md](BENCHMARK_REGISTRY.md).
+- **Automated Validation:** ✔️ Post-run convergence, conservation laws, and regression checks - see [VALIDATION_GUIDE.md](VALIDATION_GUIDE.md).
 
 ---
 
@@ -128,8 +129,9 @@ python3 cli.py submit fenicsx poisson.py --wait
 
 ### Documentation Quick Links
 
+- **[VALIDATION_GUIDE.md](VALIDATION_GUIDE.md)** - Automated post-run validation framework
 - **[PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md)** - Provenance logging schema and reproducibility guide
-- **[BENCHMARK_REGISTRY.md](BENCHMARK_REGISTRY.md)** - Reference benchmark cases for all simulators (NEW!)
+- **[BENCHMARK_REGISTRY.md](BENCHMARK_REGISTRY.md)** - Reference benchmark cases for all simulators
 - **[WORKFLOW_ROUTING_GUIDE.md](WORKFLOW_ROUTING_GUIDE.md)** - LangGraph routing logic and conditional edges
 - **[WORKFLOW_ROUTING_QUICK_REFERENCE.md](WORKFLOW_ROUTING_QUICK_REFERENCE.md)** - Quick reference for routing patterns
 - **[SIMULATION_WORKFLOW_AGENTS.md](SIMULATION_WORKFLOW_AGENTS.md)** - Specialized agents for simulation workflow stages
@@ -960,4 +962,126 @@ We welcome contributions of new benchmark cases! See [src/sim-toolbox/benchmarks
 5. Submit pull request with complete documentation
 
 For comprehensive documentation, see [BENCHMARK_REGISTRY.md](BENCHMARK_REGISTRY.md).
+
+---
+
+## Automated Post-Run Validation
+
+Keystone Supercomputer includes comprehensive automated validation for all simulation workflows. Post-run validation checks are automatically performed after every successful simulation, ensuring quality and reproducibility.
+
+### Validation Features
+
+**Three Core Validation Types:**
+
+1. **Convergence Analysis**
+   - Monitors residual convergence for iterative solvers
+   - Detects monotonic decrease and stalled convergence
+   - Validates against configurable tolerance thresholds
+
+2. **Conservation Law Validation**
+   - Validates mass, momentum, and energy conservation
+   - Configurable tolerance levels per law type
+   - Detects unphysical behavior and numerical issues
+
+3. **Regression Comparison**
+   - Compares results against benchmark expectations
+   - File existence verification
+   - Metric value comparison with tolerances
+
+### Automatic Integration
+
+Validation is automatically performed after every successful simulation:
+
+```python
+from agent.task_pipeline import TaskPipeline
+
+pipeline = TaskPipeline()
+
+# Submit task with benchmark ID for validation
+task_id = pipeline.submit_task(
+    tool="fenicsx",
+    script="poisson.py",
+    params={"mesh_size": 64, "benchmark_id": "fenicsx-poisson-2d-basic"}
+)
+
+# Wait for completion - validation runs automatically
+result = pipeline.wait_for_task(task_id, timeout=300)
+
+# Check validation results
+if 'validation' in result:
+    validation = result['validation']
+    print(f"Validation: {validation['checks_passed']}/{validation['total_checks']} checks passed")
+```
+
+### Configuration
+
+Validation behavior is controlled through `src/validation_config.json`:
+
+```json
+{
+  "convergence": {
+    "max_residual": 1e-6,
+    "min_convergence_rate": 0.1,
+    "stall_threshold": 5
+  },
+  "conservation": {
+    "mass_tolerance": 1e-6,
+    "momentum_tolerance": 1e-6,
+    "energy_tolerance": 1e-5
+  },
+  "regression": {
+    "default_tolerance": 0.01
+  },
+  "alert_on_failure": true
+}
+```
+
+Tool-specific configurations are supported for different simulators (FEniCSx, LAMMPS, OpenFOAM).
+
+### Alert System
+
+Failed validations trigger automatic alerts:
+
+- **Console Alerts:** Logged warnings for immediate visibility
+- **File Alerts:** JSON files saved to `/tmp/keystone_validation/alerts/`
+- **Custom Handlers:** Register callbacks for email, Slack, Discord, etc.
+
+### Provenance Integration
+
+Validation results are automatically recorded in provenance logs:
+
+- Validation events added to execution timeline
+- Summary metadata attached to workflow
+- Complete validation history for reproducibility
+
+### Validation History & Statistics
+
+```python
+from validation_integration import get_validation_integration
+
+validator = get_validation_integration()
+
+# Query validation history
+history = validator.get_validation_history(tool="fenicsx", limit=50)
+
+# Get aggregate statistics
+stats = validator.get_validation_statistics()
+print(f"Success rate: {stats['success_rate']:.1%}")
+```
+
+### Quick Start
+
+```bash
+# Run validation examples
+cd src
+python3 example_validation.py
+
+# Run validation tests
+python3 test_validation_framework.py
+
+# View validation configuration
+cat validation_config.json
+```
+
+For comprehensive documentation, configuration options, and integration guides, see **[VALIDATION_GUIDE.md](VALIDATION_GUIDE.md)**.
 

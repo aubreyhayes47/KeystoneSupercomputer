@@ -1,0 +1,47 @@
+{
+  "convergence": {
+    "max_residual": 1e-6,
+    "min_convergence_rate": 0.1,
+    "stall_threshold": 5,
+    "comment": "Convergence criteria for iterative solvers"
+  },
+  "conservation": {
+    "mass_tolerance": 1e-6,
+    "momentum_tolerance": 1e-6,
+    "energy_tolerance": 1e-5,
+    "comment": "Tolerances for conservation law validation"
+  },
+  "regression": {
+    "default_tolerance": 0.01,
+    "comment": "Default tolerance for regression comparison (1% relative error)"
+  },
+  "alert_on_failure": true,
+  "tool_specific": {
+    "fenicsx": {
+      "convergence": {
+        "max_residual": 1e-8,
+        "comment": "Stricter convergence for FEniCSx"
+      },
+      "regression": {
+        "default_tolerance": 0.005,
+        "comment": "Tighter tolerance for FEM (0.5% relative error)"
+      }
+    },
+    "lammps": {
+      "conservation": {
+        "energy_tolerance": 1e-4,
+        "comment": "Relaxed energy conservation for MD"
+      }
+    },
+    "openfoam": {
+      "convergence": {
+        "max_residual": 1e-6,
+        "min_convergence_rate": 0.2
+      },
+      "conservation": {
+        "mass_tolerance": 1e-8,
+        "comment": "Stricter mass conservation for CFD"
+      }
+    }
+  }
+}

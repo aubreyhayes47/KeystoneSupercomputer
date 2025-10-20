@@ -243,6 +243,46 @@ class ProvenanceLogger:
             if workflow_id in self._active_workflows:
                 self._active_workflows[workflow_id]["output_files"].append(file_info)
     
+    def add_event(
+        self,
+        workflow_id: str,
+        event_type: str,
+        event_data: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """
+        Add a custom event to the workflow timeline.
+        
+        Args:
+            workflow_id: Workflow identifier
+            event_type: Type of event (e.g., 'validation', 'checkpoint')
+            event_data: Optional event data
+        """
+        event = {
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "event": event_type,
+            "details": event_data or {}
+        }
+        
+        with self._lock:
+            if workflow_id in self._active_workflows:
+                self._active_workflows[workflow_id]["execution_timeline"].append(event)
+    
+    def update_metadata(
+        self,
+        workflow_id: str,
+        metadata: Dict[str, Any]
+    ) -> None:
+        """
+        Update workflow metadata.
+        
+        Args:
+            workflow_id: Workflow identifier
+            metadata: Metadata dictionary to merge with existing metadata
+        """
+        with self._lock:
+            if workflow_id in self._active_workflows:
+                self._active_workflows[workflow_id]["metadata"].update(metadata)
+    
     def finalize_workflow(
         self,
         workflow_id: str,
