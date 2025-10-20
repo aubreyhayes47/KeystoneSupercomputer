@@ -86,7 +86,7 @@ def test_end_to_end_provenance():
         
         # Verify provenance file
         print("\n5. Verifying provenance file...")
-        assert provenance_file.exists(), "Provenance file not created"
+        assert provenance_file.exists(), f"Provenance file not created at expected path: {provenance_file}"
         
         with open(provenance_file, 'r') as f:
             prov = json.load(f)
@@ -217,12 +217,17 @@ def test_multi_agent_workflow_provenance():
         
         timeline = prov["execution_timeline"]
         
-        # Should have: workflow_started + 4 agent actions + tool_call + workflow_completed
-        assert len(timeline) >= 6, f"Timeline too short: {len(timeline)}"
+        # Timeline should include: workflow_started + 4 agent actions + tool_call + workflow_completed
+        EXPECTED_MIN_TIMELINE_EVENTS = 6
+        EXPECTED_MIN_AGENT_ACTIONS = 4
+        
+        assert len(timeline) >= EXPECTED_MIN_TIMELINE_EVENTS, \
+            f"Timeline too short: {len(timeline)}, expected at least {EXPECTED_MIN_TIMELINE_EVENTS}"
         
         # Count agent actions
         agent_actions = [e for e in timeline if e["event"] == "agent_action"]
-        assert len(agent_actions) >= 4, f"Not enough agent actions: {len(agent_actions)}"
+        assert len(agent_actions) >= EXPECTED_MIN_AGENT_ACTIONS, \
+            f"Not enough agent actions: {len(agent_actions)}, expected at least {EXPECTED_MIN_AGENT_ACTIONS}"
         print(f"   ✓ Timeline has {len(timeline)} events")
         print(f"   ✓ Including {len(agent_actions)} agent actions")
         

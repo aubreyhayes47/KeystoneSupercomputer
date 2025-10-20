@@ -50,11 +50,14 @@ def verify_celery_integration():
         return False
     
     print("\n4. Checking provenance finalization...")
+    # Should be called in success, timeout, and error paths
+    EXPECTED_FINALIZATION_PATHS = 3
     count = content.count("prov_logger.finalize_workflow")
-    if count >= 3:  # Should be called in success, timeout, and error paths
+    if count >= EXPECTED_FINALIZATION_PATHS:
         print(f"   ✓ Workflow finalization found ({count} paths)")
     else:
-        print(f"   ✗ Insufficient finalization calls (found {count}, expected 3)")
+        print(f"   ✗ Insufficient finalization calls (found {count}, expected {EXPECTED_FINALIZATION_PATHS})")
+        print(f"   Hint: Ensure finalize_workflow is called in success, timeout, and error paths")
         return False
     
     print("\n5. Checking provenance file in results...")
@@ -340,7 +343,21 @@ def main():
         print("\n" + "=" * 70)
         print("✗ SOME CHECKS FAILED")
         print("=" * 70)
-        print("\nPlease review the failed checks above.")
+        print("\nPlease review the failed checks above and take the following actions:")
+        print("\n  For Celery Integration failures:")
+        print("    - Verify provenance_logger import in celery_app.py")
+        print("    - Check start_workflow, record_tool_call, and finalize_workflow calls")
+        print("    - Ensure finalization in all code paths (success, timeout, error)")
+        print("\n  For LangGraph Integration failures:")
+        print("    - Verify provenance_logger import in conductor_performer_graph.py")
+        print("    - Check execute_workflow method for provenance tracking")
+        print("    - Verify agent action recording and error handling")
+        print("\n  For Storage/API failures:")
+        print("    - Check file system permissions for /tmp/keystone_provenance/")
+        print("    - Verify provenance_logger.py is accessible in Python path")
+        print("\n  For Documentation failures:")
+        print("    - Ensure all documentation files are present and properly formatted")
+        print("    - Verify links in README.md are correct")
     
     print()
     return 0 if all_passed else 1
