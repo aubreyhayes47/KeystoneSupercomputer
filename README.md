@@ -70,8 +70,8 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 
 ---
 
-### **Phase 7: Reproducibility & Trust** 🔜 **(Upcoming)**
-- **Provenance Logging:** Automated `provenance.json` for every run.
+### **Phase 7: Reproducibility & Trust** ✔️ **(Completed)**
+- **Provenance Logging:** ✔️ Automated `provenance.json` for every run - see [PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md).
 - **Benchmark Registry:** Curated cases and automated validation.
 
 ---
@@ -128,8 +128,9 @@ python3 cli.py submit fenicsx poisson.py --wait
 
 ### Documentation Quick Links
 
-- **[WORKFLOW_ROUTING_GUIDE.md](WORKFLOW_ROUTING_GUIDE.md)** - LangGraph routing logic and conditional edges (NEW!)
-- **[WORKFLOW_ROUTING_QUICK_REFERENCE.md](WORKFLOW_ROUTING_QUICK_REFERENCE.md)** - Quick reference for routing patterns (NEW!)
+- **[PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md)** - Provenance logging schema and reproducibility guide (NEW!)
+- **[WORKFLOW_ROUTING_GUIDE.md](WORKFLOW_ROUTING_GUIDE.md)** - LangGraph routing logic and conditional edges
+- **[WORKFLOW_ROUTING_QUICK_REFERENCE.md](WORKFLOW_ROUTING_QUICK_REFERENCE.md)** - Quick reference for routing patterns
 - **[SIMULATION_WORKFLOW_AGENTS.md](SIMULATION_WORKFLOW_AGENTS.md)** - Specialized agents for simulation workflow stages
 - **[CONDUCTOR_PERFORMER_ARCHITECTURE.md](CONDUCTOR_PERFORMER_ARCHITECTURE.md)** - Multi-agent system architecture
 - **[ORCHESTRATION_GUIDE.md](ORCHESTRATION_GUIDE.md)** - Complete workflow orchestration guide (START HERE)
@@ -243,6 +244,76 @@ python3 cli.py job-history --tool fenicsx --status failed
 Job history is stored in `/tmp/keystone_jobs/jobs_history.jsonl` as newline-delimited JSON with complete resource metrics and detailed profiling data for each execution.
 
 For comprehensive documentation, see [JOB_MONITORING.md](JOB_MONITORING.md) and [RESOURCE_PROFILING.md](RESOURCE_PROFILING.md).
+
+---
+
+## Provenance Logging and Reproducibility
+
+Keystone Supercomputer automatically generates **provenance.json** files for every simulation run, ensuring complete reproducibility and audit capability. See [PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md) for comprehensive documentation.
+
+### Automatic Provenance Tracking
+
+Every workflow execution captures:
+- **User Prompt**: Original request that initiated the workflow
+- **Workflow Plan**: Planned execution strategy and configuration
+- **Tool Calls**: All simulation tools executed with parameters
+- **Software Versions**: Python, Celery, LangChain, and other dependencies
+- **Environment State**: Runtime variables, system information, and settings
+- **Random Seeds**: RNG states for reproducibility
+- **Input/Output Files**: Complete artifact lineage with checksums
+- **Execution Timeline**: Chronological log of all workflow events
+- **Resource Usage**: CPU, memory, and duration metrics
+- **Agent Actions**: Multi-agent workflow decisions and state changes
+
+### Features
+
+- **Zero-Configuration**: Provenance logging is automatically integrated into all workflows
+- **Complete Metadata**: Captures everything needed for exact reproduction
+- **Audit Trail**: Comprehensive timeline of all workflow events
+- **File Integrity**: SHA256 checksums for all input/output files
+- **Schema Versioning**: Forward and backward compatible schema
+- **Query API**: List, filter, and retrieve provenance records
+
+### Quick Example
+
+```python
+from provenance_logger import get_provenance_logger
+
+# Get global logger (or use automatic integration)
+logger = get_provenance_logger()
+
+# Retrieve provenance for a workflow
+provenance = logger.get_provenance(workflow_id)
+print(f"Status: {provenance['status']}")
+print(f"Duration: {provenance['duration_seconds']}s")
+print(f"Tool calls: {len(provenance['tool_calls'])}")
+
+# List completed workflows
+completed = logger.list_workflows(status="completed", limit=10)
+for wf in completed:
+    print(f"{wf['workflow_id']}: {wf['user_prompt']}")
+```
+
+### Provenance File Location
+
+Provenance files are stored in `/tmp/keystone_provenance/`:
+
+```
+/tmp/keystone_provenance/
+├── provenance_20251020_153045_abc12345.json
+├── provenance_20251020_154030_def67890.json
+└── provenance_20251020_160000_xyz98765.json
+```
+
+### Use Cases
+
+- **Result Verification**: Validate simulation results and parameters
+- **Exact Reproduction**: Reproduce workflows with identical conditions
+- **Performance Analysis**: Track resource usage and timing trends
+- **Error Diagnosis**: Debug failed workflows with complete context
+- **Compliance Auditing**: Meet regulatory requirements for documentation
+
+For complete schema documentation, usage examples, and best practices, see [PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md).
 
 ---
 

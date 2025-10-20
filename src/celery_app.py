@@ -10,6 +10,7 @@ import json
 import logging
 from typing import Dict, Any, Optional
 from job_monitor import get_monitor
+from provenance_logger import get_provenance_logger
 
 # Setup logging
 logging.basicConfig(
@@ -61,11 +62,33 @@ def run_simulation_task(
     if params is None:
         params = {}
     
-    # Get monitor and start tracking
+    # Get monitor and provenance logger
     monitor = get_monitor()
+    prov_logger = get_provenance_logger()
     task_id = self.request.id
     
     logger.info(f"Starting job {task_id}: tool={tool}, script={script}, params={params}")
+    
+    # Start provenance tracking
+    workflow_id = prov_logger.start_workflow(
+        user_prompt=f"Run {tool} simulation: {script}",
+        workflow_plan={
+            "task_id": task_id,
+            "tool": tool,
+            "script": script,
+            "params": params
+        },
+        workflow_id=task_id
+    )
+    
+    # Record tool call
+    prov_logger.record_tool_call(
+        workflow_id=workflow_id,
+        tool=tool,
+        script=script,
+        parameters=params,
+        task_id=task_id
+    )
     
     # Update task state to RUNNING
     self.update_state(
@@ -138,6 +161,17 @@ def run_simulation_task(
             'duration_seconds': job_stats.get('duration_seconds', 0),
         }
         
+        # Finalize provenance tracking
+        provenance_file = prov_logger.finalize_workflow(
+            workflow_id=workflow_id,
+            status='completed' if status == 'success' else 'failed',
+            final_result=task_result,
+            error=result.stderr if result.returncode != 0 else None
+        )
+        
+        # Add provenance file to result
+        task_result['provenance_file'] = str(provenance_file)
+        
         return task_result
         
     except subprocess.TimeoutExpired:
@@ -148,12 +182,21 @@ def run_simulation_task(
             returncode=-1,
             error='Task exceeded time limit'
         )
+        
+        # Finalize provenance for timeout
+        provenance_file = prov_logger.finalize_workflow(
+            workflow_id=workflow_id,
+            status='timeout',
+            error='Task exceeded time limit'
+        )
+        
         return {
             'status': 'timeout',
             'tool': tool,
             'script': script,
             'params': params,
-            'error': 'Task exceeded time limit'
+            'error': 'Task exceeded time limit',
+            'provenance_file': str(provenance_file)
         }
     except Exception as e:
         logger.exception(f"Job {task_id} encountered an error: {e}")
@@ -163,12 +206,21 @@ def run_simulation_task(
             returncode=-1,
             error=str(e)
         )
+        
+        # Finalize provenance for error
+        provenance_file = prov_logger.finalize_workflow(
+            workflow_id=workflow_id,
+            status='failed',
+            error=str(e)
+        )
+        
         return {
             'status': 'error',
             'tool': tool,
             'script': script,
             'params': params,
-            'error': str(e)
+            'error': str(e),
+            'provenance_file': str(provenance_file)
         }
 
 
