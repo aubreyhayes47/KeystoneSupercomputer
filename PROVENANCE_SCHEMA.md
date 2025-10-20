@@ -539,7 +539,7 @@ For regulatory compliance:
 ### Python API
 
 ```python
-from provenance_logger import ProvenanceLogger, get_provenance_logger
+from provenance_logger import ProvenanceLogger, get_provenance_logger, validate_provenance_file
 
 # Get global logger instance
 logger = get_provenance_logger()
@@ -582,6 +582,19 @@ prov = logger.get_provenance(workflow_id)
 
 # List all workflows
 workflows = logger.list_workflows(status="completed", limit=100)
+
+# Validate provenance record
+validation_result = logger.validate_provenance(prov, strict=True)
+if validation_result["valid"]:
+    print("Provenance is valid!")
+else:
+    print("Errors:", validation_result["errors"])
+    print("Warnings:", validation_result["warnings"])
+
+# Validate provenance file
+result = validate_provenance_file("provenance_abc123.json", strict=True)
+if not result["valid"]:
+    print(f"Invalid provenance: {result['errors']}")
 ```
 
 ### Automatic Integration
@@ -711,6 +724,189 @@ logger.record_agent_action(
     action="checkpoint",
     details={"iteration": 5, "convergence": 0.001}
 )
+```
+
+---
+
+## Validation and Completeness Checks
+
+### Validation Overview
+
+Keystone Supercomputer includes built-in validation to ensure provenance records are complete and conform to the schema. Validation helps catch missing or malformed metadata that could impact reproducibility.
+
+### Validation Modes
+
+**Strict Mode (default):**
+- Both errors and warnings fail validation
+- Recommended for production use and compliance auditing
+- Ensures maximum completeness of provenance records
+
+**Non-Strict Mode:**
+- Only errors fail validation; warnings are informational
+- Useful during development or for legacy provenance files
+- Allows some flexibility in metadata completeness
+
+### Python API Validation
+
+```python
+from provenance_logger import ProvenanceLogger, validate_provenance_file
+
+# Method 1: Validate a provenance dictionary
+logger = ProvenanceLogger()
+provenance = logger.get_provenance(workflow_id)
+result = logger.validate_provenance(provenance, strict=True)
+
+if result["valid"]:
+    print("✓ Provenance is valid")
+else:
+    print("✗ Validation failed")
+    for error in result["errors"]:
+        print(f"  Error: {error}")
+    for warning in result["warnings"]:
+        print(f"  Warning: {warning}")
+
+# Method 2: Validate a provenance file
+result = validate_provenance_file("/tmp/keystone_provenance/provenance_abc123.json")
+print(f"Valid: {result['valid']}")
+print(f"Schema version: {result['version']}")
+```
+
+### Command-Line Validation Tool
+
+The `validate_provenance.py` tool provides command-line validation:
+
+```bash
+# Validate a single file
+python3 src/validate_provenance.py provenance_abc123.json
+
+# Validate all files in a directory
+python3 src/validate_provenance.py /tmp/keystone_provenance/
+
+# Non-strict mode (warnings don't fail validation)
+python3 src/validate_provenance.py --non-strict provenance_abc123.json
+
+# Verbose output (show all warnings)
+python3 src/validate_provenance.py --verbose provenance_abc123.json
+
+# Combine options
+python3 src/validate_provenance.py --non-strict --verbose /tmp/keystone_provenance/
+```
+
+### Validation Checks
+
+The validator performs the following checks:
+
+#### Required Field Validation
+- All required fields must be present: `provenance_version`, `workflow_id`, `created_at`, `status`, `user_prompt`, `workflow_plan`, `tool_calls`, `software_versions`, `environment`, `random_seeds`, `input_files`, `output_files`, `execution_timeline`
+- Field types must match schema (e.g., `tool_calls` must be a list)
+
+#### Status-Dependent Validation
+- Completed/failed/timeout workflows must include:
+  - `completed_at` timestamp
+  - `duration_seconds` field
+
+#### Timestamp Format Validation
+- Timestamps should be ISO 8601 format with Z suffix
+- Example: `2025-10-20T15:30:45.123456Z`
+
+#### Tool Call Validation
+- Each tool call should include: `timestamp`, `tool`, `parameters`
+- Missing fields generate warnings
+
+#### Software Version Validation
+- `software_versions` should not be empty
+- Should include at minimum: `python`, `platform`
+
+#### Environment Validation
+- Environment should include: `hostname`, `processor`, `python_executable`, `working_directory`, `user`, `environment_variables`
+
+#### File Metadata Validation
+- Input/output files should include: `path`, `filename`
+- Should include `checksum` for reproducibility (warning if missing)
+
+#### Timeline Validation
+- Timeline should not be empty
+- Should include `workflow_started` event
+- Completed workflows should include `workflow_completed` event
+
+#### Error and Result Validation
+- Failed workflows should include `error` field
+- Completed workflows should include `final_result` field
+
+### Validation Result Structure
+
+```python
+{
+    "valid": bool,           # True if provenance passes validation
+    "errors": [str],         # List of error messages (always fail)
+    "warnings": [str],       # List of warnings (fail only in strict mode)
+    "version": str,          # Provenance schema version
+    "filepath": str          # File path (when using validate_provenance_file)
+}
+```
+
+### Example Validation Workflow
+
+```python
+from provenance_logger import get_provenance_logger, validate_provenance_file
+import sys
+
+# Start and finalize a workflow
+logger = get_provenance_logger()
+workflow_id = logger.start_workflow(
+    user_prompt="Run FEniCS simulation",
+    workflow_plan={"tool": "fenicsx", "script": "poisson.py"}
+)
+
+logger.record_tool_call(workflow_id, "fenicsx", {"mesh_size": 64})
+provenance_file = logger.finalize_workflow(
+    workflow_id, 
+    status="completed",
+    final_result={"status": "success"}
+)
+
+# Validate the generated provenance file
+result = validate_provenance_file(provenance_file, strict=True)
+if not result["valid"]:
+    print("Provenance validation failed!")
+    for error in result["errors"]:
+        print(f"  Error: {error}")
+    sys.exit(1)
+
+print("✓ Provenance validated successfully")
+```
+
+### Batch Validation for Auditing
+
+For compliance auditing, validate all provenance files:
+
+```bash
+# Audit all provenance files in strict mode
+python3 src/validate_provenance.py --verbose /tmp/keystone_provenance/
+
+# The tool returns exit code 0 if all files are valid, 1 otherwise
+# This can be integrated into CI/CD pipelines or cron jobs
+```
+
+Example audit script:
+
+```bash
+#!/bin/bash
+# audit_provenance.sh
+
+PROVENANCE_DIR="/tmp/keystone_provenance"
+LOG_FILE="/var/log/provenance_audit.log"
+
+echo "Starting provenance audit: $(date)" >> "$LOG_FILE"
+
+if python3 src/validate_provenance.py --verbose "$PROVENANCE_DIR" >> "$LOG_FILE" 2>&1; then
+    echo "✓ All provenance files valid" >> "$LOG_FILE"
+    exit 0
+else
+    echo "✗ Some provenance files invalid" >> "$LOG_FILE"
+    # Send alert notification here
+    exit 1
+fi
 ```
 
 ---

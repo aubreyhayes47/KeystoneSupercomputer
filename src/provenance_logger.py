@@ -481,6 +481,193 @@ class ProvenanceLogger:
                     user = userpass.split(":")[0]
                     return f"{protocol}://{user}:***@{parts[1]}"
         return url
+    
+    def validate_provenance(
+        self,
+        provenance: Dict[str, Any],
+        strict: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Validate provenance record for completeness and correctness.
+        
+        Args:
+            provenance: Provenance dictionary to validate
+            strict: If True, treat warnings as errors
+            
+        Returns:
+            Dictionary with validation results:
+            {
+                "valid": bool,
+                "errors": List[str],
+                "warnings": List[str],
+                "version": str
+            }
+        """
+        errors = []
+        warnings = []
+        
+        # Check provenance version
+        version = provenance.get("provenance_version")
+        if not version:
+            errors.append("Missing required field: provenance_version")
+        elif version != "1.0.0":
+            warnings.append(f"Unknown provenance_version: {version}")
+        
+        # Define required fields based on schema version 1.0.0
+        required_fields = {
+            "provenance_version": str,
+            "workflow_id": str,
+            "created_at": str,
+            "status": str,
+            "user_prompt": str,
+            "workflow_plan": dict,
+            "tool_calls": list,
+            "software_versions": dict,
+            "environment": dict,
+            "random_seeds": dict,
+            "input_files": list,
+            "output_files": list,
+            "execution_timeline": list
+        }
+        
+        # Check required fields
+        for field, expected_type in required_fields.items():
+            if field not in provenance:
+                errors.append(f"Missing required field: {field}")
+            elif not isinstance(provenance[field], expected_type):
+                errors.append(
+                    f"Field '{field}' has wrong type: expected {expected_type.__name__}, "
+                    f"got {type(provenance[field]).__name__}"
+                )
+        
+        # Check status-dependent required fields
+        status = provenance.get("status")
+        if status in ["completed", "failed", "timeout"]:
+            if "completed_at" not in provenance:
+                errors.append(f"Missing 'completed_at' for status '{status}'")
+            if "duration_seconds" not in provenance:
+                errors.append(f"Missing 'duration_seconds' for status '{status}'")
+        
+        # Validate timestamp formats
+        for field in ["created_at", "completed_at"]:
+            if field in provenance:
+                timestamp = provenance[field]
+                if not isinstance(timestamp, str) or not timestamp.endswith("Z"):
+                    warnings.append(
+                        f"Field '{field}' should be ISO 8601 timestamp with Z suffix"
+                    )
+        
+        # Validate workflow_plan structure
+        if "workflow_plan" in provenance and provenance["workflow_plan"]:
+            plan = provenance["workflow_plan"]
+            if not isinstance(plan, dict):
+                errors.append("workflow_plan must be a dictionary")
+        
+        # Validate tool_calls structure
+        if "tool_calls" in provenance:
+            for i, tool_call in enumerate(provenance["tool_calls"]):
+                if not isinstance(tool_call, dict):
+                    errors.append(f"tool_calls[{i}] must be a dictionary")
+                    continue
+                
+                required_tool_fields = ["timestamp", "tool", "parameters"]
+                for field in required_tool_fields:
+                    if field not in tool_call:
+                        warnings.append(f"tool_calls[{i}] missing field: {field}")
+        
+        # Validate software_versions
+        if "software_versions" in provenance:
+            versions = provenance["software_versions"]
+            if not versions:
+                warnings.append("software_versions is empty")
+            else:
+                # Check for critical versions
+                if "python" not in versions:
+                    warnings.append("Missing python version in software_versions")
+                if "platform" not in versions:
+                    warnings.append("Missing platform in software_versions")
+        
+        # Validate environment structure
+        if "environment" in provenance:
+            env = provenance["environment"]
+            required_env_fields = [
+                "hostname", "processor", "python_executable",
+                "working_directory", "user", "environment_variables"
+            ]
+            for field in required_env_fields:
+                if field not in env:
+                    warnings.append(f"Missing environment field: {field}")
+        
+        # Validate random_seeds
+        if "random_seeds" in provenance:
+            seeds = provenance["random_seeds"]
+            if not seeds:
+                warnings.append("random_seeds is empty - may impact reproducibility")
+        
+        # Validate file structures
+        for file_type in ["input_files", "output_files"]:
+            if file_type in provenance:
+                for i, file_info in enumerate(provenance[file_type]):
+                    if not isinstance(file_info, dict):
+                        errors.append(f"{file_type}[{i}] must be a dictionary")
+                        continue
+                    
+                    required_file_fields = ["path", "filename"]
+                    for field in required_file_fields:
+                        if field not in file_info:
+                            warnings.append(f"{file_type}[{i}] missing field: {field}")
+                    
+                    # Checksums are important for reproducibility
+                    if "checksum" not in file_info:
+                        warnings.append(
+                            f"{file_type}[{i}] missing checksum - "
+                            "may impact reproducibility"
+                        )
+        
+        # Validate execution_timeline
+        if "execution_timeline" in provenance:
+            timeline = provenance["execution_timeline"]
+            if not timeline:
+                warnings.append("execution_timeline is empty")
+            else:
+                # Check for workflow_started event
+                started_events = [
+                    e for e in timeline 
+                    if isinstance(e, dict) and e.get("event") == "workflow_started"
+                ]
+                if not started_events:
+                    warnings.append("execution_timeline missing 'workflow_started' event")
+                
+                # Check for workflow_completed event if status is completed
+                if status in ["completed", "failed", "timeout"]:
+                    completed_events = [
+                        e for e in timeline 
+                        if isinstance(e, dict) and e.get("event") == "workflow_completed"
+                    ]
+                    if not completed_events:
+                        warnings.append(
+                            "execution_timeline missing 'workflow_completed' event"
+                        )
+        
+        # Validate error field for failed workflows
+        if status == "failed" and "error" not in provenance:
+            warnings.append("Failed workflow should include 'error' field")
+        
+        # Check for final_result
+        if status == "completed" and "final_result" not in provenance:
+            warnings.append("Completed workflow should include 'final_result' field")
+        
+        # Determine overall validity
+        valid = len(errors) == 0
+        if strict and warnings:
+            valid = False
+        
+        return {
+            "valid": valid,
+            "errors": errors,
+            "warnings": warnings,
+            "version": version or "unknown"
+        }
 
 
 # Global singleton instance
@@ -503,3 +690,70 @@ def get_provenance_logger() -> ProvenanceLogger:
                 _global_logger = ProvenanceLogger()
     
     return _global_logger
+
+
+def validate_provenance_file(filepath: Union[str, Path], strict: bool = True) -> Dict[str, Any]:
+    """
+    Validate a provenance JSON file for completeness and correctness.
+    
+    This is a convenience function for validating provenance files without
+    needing to instantiate a ProvenanceLogger.
+    
+    Args:
+        filepath: Path to provenance JSON file
+        strict: If True, treat warnings as errors
+        
+    Returns:
+        Dictionary with validation results:
+        {
+            "valid": bool,
+            "errors": List[str],
+            "warnings": List[str],
+            "version": str,
+            "filepath": str
+        }
+        
+    Example:
+        >>> result = validate_provenance_file("provenance_abc123.json")
+        >>> if result["valid"]:
+        ...     print("Provenance is valid!")
+        ... else:
+        ...     print("Errors:", result["errors"])
+    """
+    filepath = Path(filepath)
+    
+    if not filepath.exists():
+        return {
+            "valid": False,
+            "errors": [f"File not found: {filepath}"],
+            "warnings": [],
+            "version": "unknown",
+            "filepath": str(filepath)
+        }
+    
+    try:
+        with open(filepath, 'r') as f:
+            provenance = json.load(f)
+    except json.JSONDecodeError as e:
+        return {
+            "valid": False,
+            "errors": [f"Invalid JSON: {e}"],
+            "warnings": [],
+            "version": "unknown",
+            "filepath": str(filepath)
+        }
+    except Exception as e:
+        return {
+            "valid": False,
+            "errors": [f"Error reading file: {e}"],
+            "warnings": [],
+            "version": "unknown",
+            "filepath": str(filepath)
+        }
+    
+    # Use the logger's validation method
+    logger = ProvenanceLogger()
+    result = logger.validate_provenance(provenance, strict=strict)
+    result["filepath"] = str(filepath)
+    
+    return result
