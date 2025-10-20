@@ -1,0 +1,269 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Simulation Benchmark Metadata Schema",
+  "description": "Schema for defining reference benchmark cases for simulation tools in sim-toolbox",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "simulator",
+    "version",
+    "description",
+    "category",
+    "difficulty",
+    "input_files",
+    "expected_results",
+    "validation_criteria",
+    "metadata"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the benchmark (e.g., fenicsx-poisson-2d-basic)",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the benchmark"
+    },
+    "simulator": {
+      "type": "string",
+      "enum": ["fenicsx", "lammps", "openfoam"],
+      "description": "Simulation tool name"
+    },
+    "version": {
+      "type": "string",
+      "description": "Benchmark version (semantic versioning)",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the benchmark problem"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "finite-element",
+        "molecular-dynamics",
+        "computational-fluid-dynamics",
+        "structural-analysis",
+        "thermal-analysis",
+        "multi-physics",
+        "optimization"
+      ],
+      "description": "Benchmark category"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["beginner", "intermediate", "advanced", "expert"],
+      "description": "Complexity level of the benchmark"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Keywords for categorizing the benchmark"
+    },
+    "input_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["filename", "description", "checksum"],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Name of the input file"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the file purpose"
+          },
+          "checksum": {
+            "type": "string",
+            "description": "SHA256 checksum of the file",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "path": {
+            "type": "string",
+            "description": "Relative path to the file within benchmark directory"
+          }
+        }
+      },
+      "description": "List of input files required for the benchmark"
+    },
+    "expected_results": {
+      "type": "object",
+      "description": "Expected outcomes of the benchmark",
+      "properties": {
+        "output_files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["filename", "description"],
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "checksum": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Expected numerical results",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "number"
+              },
+              "tolerance": {
+                "type": "number",
+                "description": "Acceptable deviation from expected value"
+              },
+              "unit": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "performance": {
+          "type": "object",
+          "description": "Expected performance metrics",
+          "properties": {
+            "typical_runtime_seconds": {
+              "type": "number",
+              "description": "Typical execution time on reference hardware"
+            },
+            "memory_mb": {
+              "type": "number",
+              "description": "Typical memory usage in MB"
+            },
+            "reference_hardware": {
+              "type": "string",
+              "description": "Hardware specification for reference metrics"
+            }
+          }
+        }
+      }
+    },
+    "validation_criteria": {
+      "type": "object",
+      "description": "Criteria for validating benchmark results",
+      "required": ["method"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["exact_match", "tolerance_based", "convergence_check", "custom_script"],
+          "description": "Validation method to use"
+        },
+        "tolerance": {
+          "type": "number",
+          "description": "Numerical tolerance for validation (if applicable)"
+        },
+        "validation_script": {
+          "type": "string",
+          "description": "Path to custom validation script (if method is custom_script)"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["file_exists", "metric_value", "convergence", "custom"]
+              },
+              "parameters": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata about the benchmark",
+      "required": ["author", "created_date", "license"],
+      "properties": {
+        "author": {
+          "type": "string",
+          "description": "Author or contributor name"
+        },
+        "created_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the benchmark was created (YYYY-MM-DD)"
+        },
+        "updated_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of last update (YYYY-MM-DD)"
+        },
+        "license": {
+          "type": "string",
+          "description": "License for the benchmark (e.g., MIT, Apache-2.0)"
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Academic papers or other references"
+        },
+        "doi": {
+          "type": "string",
+          "description": "Digital Object Identifier if available"
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "description": "Execution parameters and requirements",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command to execute the benchmark"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Runtime parameters",
+          "additionalProperties": true
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "description": "Maximum allowed execution time"
+        },
+        "requires_gpu": {
+          "type": "boolean",
+          "description": "Whether GPU is required"
+        },
+        "parallel": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "processes": {
+              "type": "integer"
+            },
+            "threads": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  }
+}
