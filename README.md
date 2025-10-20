@@ -72,7 +72,7 @@ Below is the full 10-phase roadmap for developing Keystone Supercomputer, with c
 
 ### **Phase 7: Reproducibility & Trust** ✔️ **(Completed)**
 - **Provenance Logging:** ✔️ Automated `provenance.json` for every run - see [PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md).
-- **Benchmark Registry:** Curated cases and automated validation.
+- **Benchmark Registry:** ✔️ Curated reference cases with validation for all simulators - see [BENCHMARK_REGISTRY.md](BENCHMARK_REGISTRY.md).
 
 ---
 
@@ -128,7 +128,8 @@ python3 cli.py submit fenicsx poisson.py --wait
 
 ### Documentation Quick Links
 
-- **[PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md)** - Provenance logging schema and reproducibility guide (NEW!)
+- **[PROVENANCE_SCHEMA.md](PROVENANCE_SCHEMA.md)** - Provenance logging schema and reproducibility guide
+- **[BENCHMARK_REGISTRY.md](BENCHMARK_REGISTRY.md)** - Reference benchmark cases for all simulators (NEW!)
 - **[WORKFLOW_ROUTING_GUIDE.md](WORKFLOW_ROUTING_GUIDE.md)** - LangGraph routing logic and conditional edges
 - **[WORKFLOW_ROUTING_QUICK_REFERENCE.md](WORKFLOW_ROUTING_QUICK_REFERENCE.md)** - Quick reference for routing patterns
 - **[SIMULATION_WORKFLOW_AGENTS.md](SIMULATION_WORKFLOW_AGENTS.md)** - Specialized agents for simulation workflow stages
@@ -860,4 +861,103 @@ Results are stored in `/tmp/keystone_benchmarks/` and include:
 - Markdown report for easy sharing
 
 For comprehensive documentation and examples, see [BENCHMARK_GUIDE.md](BENCHMARK_GUIDE.md).
+
+---
+
+## Benchmark Registry - Reference Cases for Validation
+
+Keystone Supercomputer includes a comprehensive benchmark registry with curated reference test cases for all supported simulators. The registry provides standardized benchmarks with expected results, validation criteria, and complete metadata for reproducibility. See [BENCHMARK_REGISTRY.md](BENCHMARK_REGISTRY.md) for complete documentation.
+
+### Purpose
+
+The benchmark registry serves multiple purposes:
+- **Quality Assurance**: Validate that simulation tools are installed and working correctly
+- **Reproducibility**: Provide standardized test cases with documented expected results
+- **Education**: Offer learning resources for new users with increasing difficulty levels
+- **Regression Testing**: Detect when code changes break existing functionality
+- **Performance Comparison**: Compare results across different hardware configurations
+
+### Available Benchmarks
+
+#### FEniCSx (Finite Element Method)
+- **poisson-2d-basic**: 2D Poisson equation with Dirichlet boundary conditions (beginner)
+
+#### LAMMPS (Molecular Dynamics)
+- **lennard-jones-fluid**: Classical MD simulation of Lennard-Jones fluid (beginner)
+
+#### OpenFOAM (Computational Fluid Dynamics)
+- **cavity-flow**: Lid-driven cavity flow using icoFoam solver (beginner)
+
+### Quick Start
+
+```bash
+cd src/sim-toolbox/benchmarks
+
+# List all benchmarks
+python3 benchmark_registry.py list
+
+# Filter by simulator
+python3 benchmark_registry.py list --simulator fenicsx
+
+# View benchmark details
+python3 benchmark_registry.py info --benchmark-id fenicsx-poisson-2d-basic
+
+# Validate all benchmarks
+python3 benchmark_registry.py validate-all
+
+# Get statistics
+python3 benchmark_registry.py stats
+
+# Generate report
+python3 benchmark_registry.py report --output BENCHMARK_REPORT.md
+```
+
+### Python API
+
+```python
+from benchmark_registry import BenchmarkRegistry
+
+# Initialize registry
+registry = BenchmarkRegistry()
+
+# List benchmarks
+benchmarks = registry.list_benchmarks(simulator="fenicsx", difficulty="beginner")
+for bench in benchmarks:
+    print(f"{bench['id']}: {bench['name']}")
+
+# Load benchmark details
+benchmark = registry.load_benchmark("fenicsx-poisson-2d-basic")
+print(f"Description: {benchmark['description']}")
+print(f"Expected results: {benchmark['expected_results']}")
+
+# Validate benchmark
+result = registry.validate_benchmark("fenicsx-poisson-2d-basic")
+if result['valid']:
+    print("✓ Benchmark is valid")
+```
+
+### Benchmark Structure
+
+Each benchmark includes:
+- **Identification**: Unique ID, name, simulator, version
+- **Description**: Detailed problem statement with equations and boundary conditions
+- **Classification**: Category, difficulty level, tags
+- **Input Files**: All required files with SHA256 checksums
+- **Expected Results**: Output files, numerical metrics with tolerances, performance data
+- **Validation Criteria**: Methods and checks for validating results
+- **Metadata**: Author, date, license, references
+- **Execution**: Command, parameters, timeout, parallelization settings
+
+### Contributing Benchmarks
+
+We welcome contributions of new benchmark cases! See [src/sim-toolbox/benchmarks/CONTRIBUTING_BENCHMARKS.md](src/sim-toolbox/benchmarks/CONTRIBUTING_BENCHMARKS.md) for detailed guidelines.
+
+**Submission process:**
+1. Create benchmark definition following the JSON schema
+2. Include all input files with checksums
+3. Document expected results with appropriate tolerances
+4. Test execution and validation
+5. Submit pull request with complete documentation
+
+For comprehensive documentation, see [BENCHMARK_REGISTRY.md](BENCHMARK_REGISTRY.md).
 
